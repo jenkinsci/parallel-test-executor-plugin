@@ -9,6 +9,8 @@ import jenkins.model.Jenkins;
 import org.kohsuke.stapler.Stapler;
 
 /**
+ * {@link AggregatedTestResultAction} that collects test reports from triggered builds.
+ *
  * @author Kohsuke Kawaguchi
  */
 public class AggregatedTestResultActionImpl extends AggregatedTestResultAction {

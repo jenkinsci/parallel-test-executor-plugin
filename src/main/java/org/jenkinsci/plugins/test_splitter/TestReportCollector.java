@@ -27,7 +27,6 @@ public class TestReportCollector extends Recorder {
 
     @Override
     public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
-
         BuildInfoExporterAction a = build.getAction(BuildInfoExporterAction.class);
         if (a!=null) {
             AggregatedTestResultActionImpl agg = new AggregatedTestResultActionImpl(build);
