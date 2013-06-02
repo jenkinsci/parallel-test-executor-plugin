@@ -5,15 +5,30 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
+import hudson.model.Action;
+import hudson.model.AutoCompletionCandidates;
 import hudson.model.BuildListener;
+import hudson.model.Item;
+import hudson.model.ItemGroup;
+import hudson.model.Result;
+import hudson.model.TaskListener;
+import hudson.plugins.parameterizedtrigger.AbstractBuildParameterFactory;
+import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
+import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
+import hudson.plugins.parameterizedtrigger.BlockingBehaviour;
 import hudson.plugins.parameterizedtrigger.BuildInfoExporterAction;
+import hudson.plugins.parameterizedtrigger.FileBuildParameterFactory;
+import hudson.plugins.parameterizedtrigger.TriggerBuilder;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.tasks.junit.ClassResult;
+import hudson.tasks.junit.JUnitResultArchiver;
+import hudson.tasks.test.AbstractTestResultAction;
 import hudson.tasks.test.TabulatedResult;
 import hudson.tasks.test.TestResult;
-import hudson.tasks.test.AbstractTestResultAction;
+import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -24,6 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Kohsuke Kawaguchi
@@ -31,13 +47,32 @@ import java.util.PriorityQueue;
 public class TestSplitter extends Builder {
     private Parallelism parallelism;
 
+    private String testJob;
+    private String patternFile;
+    private String testReportFiles;
+
     @DataBoundConstructor
-    public TestSplitter(Parallelism parallelism) {
+    public TestSplitter(Parallelism parallelism, String testJob, String patternFile, String testReportFiles) {
         this.parallelism = parallelism;
+        this.testJob = testJob;
+        this.patternFile = patternFile;
+        this.testReportFiles = testReportFiles;
     }
 
     public Parallelism getParallelism() {
         return parallelism;
+    }
+
+    public String getTestJob() {
+        return testJob;
+    }
+
+    public String getPatternFile() {
+        return patternFile;
+    }
+
+    public String getTestReportFiles() {
+        return testReportFiles;
     }
 
     /**
@@ -95,7 +130,7 @@ public class TestSplitter extends Builder {
             Collections.sort(sorted);
 
             // degree of the parallelismm. we need minimum 1
-            final int n = Math.max(1,parallelism.calculate(sorted));
+            final int n = Math.max(1, parallelism.calculate(sorted));
 
             List<Knapsack> knapsacks = new ArrayList<Knapsack>(n);
             for (int i = 0; i < n; i++)
@@ -141,8 +176,49 @@ public class TestSplitter extends Builder {
             }
         }
 
+        createTriggerBuilder().perform(build,launcher,listener);
+
+        tally(build, launcher, listener);
+
         return true;
     }
+
+    /**
+     * Collects all the test reports
+     */
+    private void tally(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws IOException, InterruptedException {
+        // TODO: offer up the configuration of this, or perhaps let the user configure it separately
+        new JUnitResultArchiver("test-splits/reports/**/*.xml").perform(build,launcher,listener);
+    }
+
+    /**
+     * Create {@link TriggerBuilder} for launching test jobs.
+     */
+    private TriggerBuilder createTriggerBuilder() {
+        // to let the caller job do a clean up, don't let the failure in the test job early-terminate the build process
+        // that's why the first argument is ABORTED.
+        BlockingBehaviour blocking = new BlockingBehaviour(Result.ABORTED, Result.UNSTABLE, Result.FAILURE);
+        final AtomicInteger iota = new AtomicInteger(1);
+
+        // actual logic of child process triggering is left up to the parameterized build
+        BlockableBuildTriggerConfig config = new BlockableBuildTriggerConfig(testJob,
+            blocking,
+            Collections.<AbstractBuildParameterFactory>singletonList(
+                new FileBuildParameterFactory("test-splits/split.*.txt")),
+            Collections.<AbstractBuildParameters>singletonList(
+                // put a marker action that we look for to collect test reports
+                new AbstractBuildParameters() {
+                    @Override
+                    public Action getAction(AbstractBuild<?,?> build, TaskListener listener) throws IOException, InterruptedException, DontTriggerException {
+                        return new TestCollectionMarker(build, TestSplitter.this, iota.incrementAndGet());
+                    }
+                }
+            )
+        );
+
+        return new TriggerBuilder(config);
+    }
+
 
     private long pow(long l) {
         return l*l;
@@ -182,6 +258,10 @@ public class TestSplitter extends Builder {
         @Override
         public boolean isApplicable(Class<? extends AbstractProject> aClass) {
             return true;
+        }
+
+        public AutoCompletionCandidates doAutoCompleteTestJob(@QueryParameter String value,  @AncestorInPath Item self, @AncestorInPath ItemGroup container) {
+            return AutoCompletionCandidates.ofJobNames(AbstractProject.class, value, self, container);
         }
 
         @Override

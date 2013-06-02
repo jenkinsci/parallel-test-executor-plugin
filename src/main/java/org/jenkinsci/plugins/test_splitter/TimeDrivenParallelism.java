@@ -32,7 +32,7 @@ public class TimeDrivenParallelism extends Parallelism {
     public static class DescriptorImpl extends Descriptor<Parallelism> {
         @Override
         public String getDisplayName() {
-            return "Fixed number of batches";
+            return "Fixed time (minutes) for each batch";
         }
     }
 }

@@ -26,7 +26,7 @@ public class CountDrivenParallelism extends Parallelism {
     public static class DescriptorImpl extends Descriptor<Parallelism> {
         @Override
         public String getDisplayName() {
-            return "Fixed time (minutes) for each batch";
+            return "Fixed number of batches";
         }
     }
 }
