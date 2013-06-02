@@ -29,43 +29,15 @@ import java.util.PriorityQueue;
  * @author Kohsuke Kawaguchi
  */
 public class TestSplitter extends Builder {
+    private Parallelism parallelism;
 
     @DataBoundConstructor
-    public TestSplitter() {
+    public TestSplitter(Parallelism parallelism) {
+        this.parallelism = parallelism;
     }
 
-    /**
-     * Execution time of a specific test case.
-     */
-    class TestClass implements Comparable<TestClass> {
-        String className;
-        long duration;
-        /**
-         * Knapsack that this test class belongs to.
-         */
-        Knapsack knapsack;
-
-        public TestClass(ClassResult cr) {
-            String pkgName = cr.getParent().getName();
-            if (pkgName.equals("(root)"))   // UGH
-                pkgName = "";
-            else
-                pkgName += '.';
-            this.className = pkgName+cr.getName();
-            this.duration = (long)(cr.getDuration()*1000);  // milliseconds is a good enough precision for us
-        }
-
-        public int compareTo(TestClass that) {
-            long l = this.duration - that.duration;
-            // sort them in the descending order
-            if (l>0)    return -1;
-            if (l<0)    return 1;
-            return 0;
-        }
-
-        public String getSourceFileName() {
-            return className.replace('.','/')+".java";
-        }
+    public Parallelism getParallelism() {
+        return parallelism;
     }
 
     /**
@@ -122,7 +94,8 @@ public class TestSplitter extends Builder {
             List<TestClass> sorted = new ArrayList<TestClass>(data.values());
             Collections.sort(sorted);
 
-            int n = 4; // TODO: take this as a parameter
+            // degree of the parallelismm. we need minimum 1
+            final int n = Math.min(1,parallelism.calculate(sorted));
 
             List<Knapsack> knapsacks = new ArrayList<Knapsack>(n);
             for (int i = 0; i < n; i++)
