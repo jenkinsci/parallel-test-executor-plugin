@@ -95,7 +95,7 @@ public class TestSplitter extends Builder {
             Collections.sort(sorted);
 
             // degree of the parallelismm. we need minimum 1
-            final int n = Math.min(1,parallelism.calculate(sorted));
+            final int n = Math.max(1,parallelism.calculate(sorted));
 
             List<Knapsack> knapsacks = new ArrayList<Knapsack>(n);
             for (int i = 0; i < n; i++)
