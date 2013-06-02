@@ -6,9 +6,8 @@
     This builder can be used with any test job that (1) produce JUnit-compatible XML files, and
     (2) accept a test-exclusion list in a file. This builder looks at the test execution time from
     the last time, and divide tests into multiple units of roughly equal size.
-    Each unit is then converted into the
-    exclusion list (by excluding all but the tests that assigned to that unit), and the test job
-    is triggered for each unit, with the exclusion file placed inside the workspace at your specified location.
+    Each unit is then converted into the exclusion list (by excluding all but the tests that assigned to that unit),
+    and the test job is triggered for each unit, with the exclusion file placed inside the workspace at your specified location.
 
     <p>
     You are responsible for configuring the build script in the test job to honor the exclusion file.
@@ -16,6 +15,10 @@
     and check in an empty file by that name to your SCM. You can then specify that file as the "exclusion file name"
     in the configuration of this builder, and the builder will overwrite the empty file from SCM
     by the generated one.
+
+    <p>
+    Similarly, you are responsible for checking "Execute concurrent builds if necessary" on the test job
+    to allow the concurrent execution.
 
     <p>
     At the end of the executions of the test job, the specified report directories are brought back into
