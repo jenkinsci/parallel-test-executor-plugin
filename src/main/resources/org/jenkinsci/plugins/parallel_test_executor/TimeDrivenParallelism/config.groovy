@@ -1,4 +1,4 @@
-package org.jenkinsci.plugins.test_splitter.TimeDrivenParallelism
+package org.jenkinsci.plugins.parallel_test_executor.TimeDrivenParallelism
 
 def f = namespace(lib.FormTagLib)
 

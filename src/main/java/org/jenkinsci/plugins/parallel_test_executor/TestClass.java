@@ -1,7 +1,7 @@
-package org.jenkinsci.plugins.test_splitter;
+package org.jenkinsci.plugins.parallel_test_executor;
 
 import hudson.tasks.junit.ClassResult;
-import org.jenkinsci.plugins.test_splitter.ParallelTestExecutor.Knapsack;
+import org.jenkinsci.plugins.parallel_test_executor.ParallelTestExecutor.Knapsack;
 
 /**
  * Execution time of a specific test case.

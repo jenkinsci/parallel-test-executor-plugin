@@ -1,4 +1,4 @@
-package org.jenkinsci.plugins.test_splitter;
+package org.jenkinsci.plugins.parallel_test_executor;
 
 import hudson.model.AbstractDescribableImpl;
 

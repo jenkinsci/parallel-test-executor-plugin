@@ -1,4 +1,4 @@
-package org.jenkinsci.plugins.test_splitter.CountDrivenParallelism
+package org.jenkinsci.plugins.parallel_test_executor.CountDrivenParallelism
 
 def f = namespace(lib.FormTagLib)
 

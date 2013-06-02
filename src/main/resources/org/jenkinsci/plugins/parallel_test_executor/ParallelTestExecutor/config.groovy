@@ -1,7 +1,7 @@
-package org.jenkinsci.plugins.test_splitter.ParallelTestExecutor
+package org.jenkinsci.plugins.parallel_test_executor.ParallelTestExecutor
 
 import jenkins.model.Jenkins
-import org.jenkinsci.plugins.test_splitter.Parallelism;
+import org.jenkinsci.plugins.parallel_test_executor.Parallelism;
 
 def f = namespace(lib.FormTagLib)
 
