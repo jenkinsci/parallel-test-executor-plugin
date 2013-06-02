@@ -210,7 +210,7 @@ public class ParallelTestExecutor extends Builder {
                 new AbstractBuildParameters() {
                     @Override
                     public Action getAction(AbstractBuild<?,?> build, TaskListener listener) throws IOException, InterruptedException, DontTriggerException {
-                        return new TestCollectionMarker(build, ParallelTestExecutor.this, iota.incrementAndGet());
+                        return new TestCollector(build, ParallelTestExecutor.this, iota.incrementAndGet());
                     }
                 }
             )

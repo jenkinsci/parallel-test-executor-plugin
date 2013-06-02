@@ -16,37 +16,21 @@ import java.io.File;
 import java.io.IOException;
 
 /**
+ * Runs at the end of a triggered test sub-task and collects test reports back to the master.
+ *
  * @author Kohsuke Kawaguchi
  */
-public class TestCollectionMarker extends InvisibleAction {
+class TestCollector extends InvisibleAction {
     // none of this is meant to persist
     private transient AbstractBuild<?,?> collector;
     private transient ParallelTestExecutor testExecutor;
     private transient int ordinal;
 
-    public TestCollectionMarker(AbstractBuild<?, ?> collector, ParallelTestExecutor testExecutor, int ordinal) {
+    public TestCollector(AbstractBuild<?, ?> collector, ParallelTestExecutor testExecutor, int ordinal) {
         this.testExecutor = testExecutor;
         assert collector!=null;
         this.collector = collector;
         this.ordinal = ordinal;
-    }
-
-    /**
-     * Cleans up the old test reports in the workspace since copyRecursiveTo messes up the up-to-date check
-     */
-    public void clean(AbstractBuild<?,?> build, TaskListener listener) {
-        if (collector==null)    return; // must be deserialized. pretend as if this action doesn't exist.
-
-        try {
-            for (FilePath f : build.getWorkspace().list(testExecutor.getTestReportFiles())) {
-                f.delete();
-            }
-        } catch (IOException e) {
-            // ignore this error
-            e.printStackTrace(listener.error("Failed to clean up the test reports"));
-        } catch (InterruptedException e) {
-            // TODO: core should allow InterruptedException to be thrown from RunListener
-        }
     }
 
     /**
@@ -67,6 +51,7 @@ public class TestCollectionMarker extends InvisibleAction {
 
             if (src.getChannel()==dst.getChannel()) {
                 // fast case where a direct copy is possible
+                // TODO: move this to the core. copyRecursiveTo + 'archive' semantics
                 src.act(new FileCallable<Integer>() {
                     private static final long serialVersionUID = 1L;
                     public Integer invoke(File base, VirtualChannel channel) throws IOException {
