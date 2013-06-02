@@ -42,4 +42,10 @@
     -->
     <maven-hpi-plugin.version>1.95</maven-hpi-plugin.version>
   </properties>
+
+  <scm>
+    <connection>scm:git:git://github.com/jenkinsci/${project.artifactId}-plugin.git</connection>
+    <developerConnection>scm:git:git@github.com:jenkinsci/${project.artifactId}-plugin.git</developerConnection>
+  </scm>
+
 </project>
