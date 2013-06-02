@@ -1,0 +1,19 @@
+<div>
+    Divide the tests into parallel sub-tasks each no bigger than N minutes.
+    Combined with elastic slaves, such as EC2, the turn-around time of the
+    tests will remain the same no matter how many tests you add.
+
+    <p>
+    This value counts just the time spent on executing tests, and not including
+    other time such as checking out the code, building the test, etc. For example,
+    if your test job spends 50 minutes in tests and 60 minutes total from start to
+    finish, then you have 10 minutes "fixed" overhead regardless of the number of tests
+    it executes. If you use this mode and set the value to "10 minutes", then
+    you'll have 5 parallel sub-tasks that all ends in roughly 20 minutes
+    (20 mins = 10 mins tests time + 10 mins overhead.)
+
+    <p>
+    "N minutes per a sub-task" is a goal, not a hard constraint. So a sub-task
+    can take longer (for example if you have a single test that takes more than
+    N minutes.)
+</div>
