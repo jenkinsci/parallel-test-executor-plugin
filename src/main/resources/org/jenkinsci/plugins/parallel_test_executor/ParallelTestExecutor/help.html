@@ -1,18 +1,19 @@
 <div>
-    Given another job that runs tests, executes muliiple runs of it concurrently by interleaving tests,
+    Given another job that runs tests, executes multiple runs of it concurrently by interleaving tests,
     achieving the parallel test execution semantics.
 
     <p>
     This builder can be used with any test job that (1) produce JUnit-compatible XML files, and
     (2) accept a test-exclusion list in a file. This builder looks at the test execution time from
-    the last time, and divide tests into multiple units. Each unit is then converted into the
+    the last time, and divide tests into multiple units of roughly equal size.
+    Each unit is then converted into the
     exclusion list (by excluding all but the tests that assigned to that unit), and the test job
-    is triggered with this exclusion file placed inside the workspace at your specified location.
+    is triggered for each unit, with the exclusion file placed inside the workspace at your specified location.
 
     <p>
     You are responsible for configuring the build script in the test job to honor the exclusion file.
     A standard technique is to write the build script to always refer to a fixed exclusion list file,
-    and check in an empty file by that name. You can then specify that file as the "exclusion file name"
+    and check in an empty file by that name to your SCM. You can then specify that file as the "exclusion file name"
     in the configuration of this builder, and the builder will overwrite the empty file from SCM
     by the generated one.
 
@@ -21,5 +22,7 @@
     this job's workspace, then the standard JUnit test report collector will tally them.
 
     <p>
-    
+    We use an exclusion list as opposed to an inclusion list so that newly added tests can be accounted for.
+    A related gotcha is that if a new test is added, the first build afterward will be executed in all the sub-builds,
+    because it's not in the exclusion list on any of the units.
 </div>
