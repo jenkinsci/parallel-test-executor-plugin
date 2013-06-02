@@ -103,27 +103,14 @@ public class ParallelTestExecutor extends Builder {
         FilePath dir = build.getWorkspace().child("test-splits");
         dir.deleteRecursive();
 
-        BuildInfoExporterAction a = findPreviousTriggerBuild(build);
-        if (a == null) {
+        TestResult tr = findPreviousTestResult(build);
+        if (tr == null) {
             listener.getLogger().println("No record available, so executing everything in one place");
             dir.child("split.1.txt").write("", "UTF-8"); // no exclusions
         } else {
 
             Map<String/*fully qualified class name*/, TestClass> data = new HashMap<String, TestClass>();
-
-            for (AbstractBuild<?, ?> b : a.getTriggeredBuilds()) {
-                AbstractTestResultAction tra = b.getTestResultAction();
-                if (tra == null)
-                    tra = b.getAggregatedTestResultAction();
-
-                if (tra == null)
-                    continue;   // nothing to look into
-
-                Object r = tra.getResult();
-                if (r instanceof TestResult) {
-                    collect((TestResult) r, data);
-                }
-            }
+            collect(tr, data);
 
             // sort in the descending order of the duration
             List<TestClass> sorted = new ArrayList<TestClass>(data.values());
@@ -242,13 +229,18 @@ public class ParallelTestExecutor extends Builder {
         }
     }
 
-    private BuildInfoExporterAction findPreviousTriggerBuild(AbstractBuild<?,?> b) {
+    private TestResult findPreviousTestResult(AbstractBuild<?, ?> b) {
         for (int i=0; i<10; i++) {// limit the search to a small number to avoid loading too much
             b = b.getPreviousBuild();
             if (b==null)    break;
 
-            BuildInfoExporterAction a = b.getAction(BuildInfoExporterAction.class);
-            if (a!=null)    return a;
+            AbstractTestResultAction tra = b.getTestResultAction();
+            if (tra==null)  break;
+
+            Object o = tra.getResult();
+            if (o instanceof TestResult) {
+                return (TestResult) o;
+            }
         }
         return null;    // couldn't find it
     }
