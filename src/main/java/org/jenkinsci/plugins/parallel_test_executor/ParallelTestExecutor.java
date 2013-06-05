@@ -157,7 +157,8 @@ public class ParallelTestExecutor extends Builder {
                 Knapsack k = knapsacks.get(i);
                 for (TestClass d : sorted) {
                     if (d.knapsack == k) continue;
-                    w.println(d.getSourceFileName());
+                    w.println(d.getSourceFileName(".java"));
+                    w.println(d.getSourceFileName(".class"));
                 }
                 w.close();
             }

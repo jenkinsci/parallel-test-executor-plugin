@@ -32,7 +32,7 @@ public class TestClass implements Comparable<TestClass> {
         return 0;
     }
 
-    public String getSourceFileName() {
-        return className.replace('.','/')+".java";
+    public String getSourceFileName(String extension) {
+        return className.replace('.','/')+extension;
     }
 }
