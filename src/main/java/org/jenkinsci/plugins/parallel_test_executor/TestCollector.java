@@ -14,13 +14,16 @@ import org.apache.tools.ant.taskdefs.Copy;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 
 /**
  * Runs at the end of a triggered test sub-task and collects test reports back to the master.
  *
  * @author Kohsuke Kawaguchi
  */
-class TestCollector extends InvisibleAction {
+class TestCollector extends InvisibleAction implements Serializable {
+    private static final long serialVersionUID = -592264249944063364L;
+
     // none of this is meant to persist
     private transient AbstractBuild<?,?> collector;
     private transient ParallelTestExecutor testExecutor;
