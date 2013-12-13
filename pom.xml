@@ -7,7 +7,7 @@
   </parent>
 
   <artifactId>parallel-test-executor</artifactId>
-  <version>1.1-SNAPSHOT</version>
+  <version>1.1</version>
   <packaging>hpi</packaging>
 
   <name>Jenkins Parallel Test Executor Plugin</name>
