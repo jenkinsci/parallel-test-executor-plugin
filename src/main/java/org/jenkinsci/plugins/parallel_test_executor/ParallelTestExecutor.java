@@ -242,7 +242,7 @@ public class ParallelTestExecutor extends Builder {
             if (b==null)    break;
 
             AbstractTestResultAction tra = b.getTestResultAction();
-            if (tra==null)  break;
+            if (tra==null)  continue;
 
             Object o = tra.getResult();
             if (o instanceof TestResult) {
