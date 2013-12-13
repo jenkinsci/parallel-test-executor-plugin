@@ -17,7 +17,6 @@ import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
 import hudson.plugins.parameterizedtrigger.BinaryFileParameterFactory;
 import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
 import hudson.plugins.parameterizedtrigger.BlockingBehaviour;
-import hudson.plugins.parameterizedtrigger.BuildInfoExporterAction;
 import hudson.plugins.parameterizedtrigger.TriggerBuilder;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
@@ -50,13 +49,15 @@ public class ParallelTestExecutor extends Builder {
     private String testJob;
     private String patternFile;
     private String testReportFiles;
+    private boolean doNotArchiveTestResults = false;
 
     @DataBoundConstructor
-    public ParallelTestExecutor(Parallelism parallelism, String testJob, String patternFile, String testReportFiles) {
+    public ParallelTestExecutor(Parallelism parallelism, String testJob, String patternFile, String testReportFiles, boolean archiveTestResults) {
         this.parallelism = parallelism;
         this.testJob = testJob;
         this.patternFile = patternFile;
         this.testReportFiles = testReportFiles;
+        this.doNotArchiveTestResults = !archiveTestResults;
     }
 
     public Parallelism getParallelism() {
@@ -75,12 +76,16 @@ public class ParallelTestExecutor extends Builder {
         return testReportFiles;
     }
 
+    public boolean isArchiveTestResults() {
+        return !doNotArchiveTestResults;
+    }
+
     /**
-     * {@link TestClass}es are divided into multiple sets of roughly equal size.
+     * {@link org.jenkinsci.plugins.parallel_test_executor.TestClass}es are divided into multiple sets of roughly equal size.
      */
     class Knapsack implements Comparable<Knapsack> {
         /**
-         * Total duration of all {@link TestClass}es that are in this knapsack.
+         * Total duration of all {@link org.jenkinsci.plugins.parallel_test_executor.TestClass}es that are in this knapsack.
          */
         long total;
 
@@ -166,7 +171,9 @@ public class ParallelTestExecutor extends Builder {
 
         createTriggerBuilder().perform(build,launcher,listener);
 
-        tally(build, launcher, listener);
+        if (isArchiveTestResults()) {
+            tally(build, launcher, listener);
+        }
 
         return true;
     }
@@ -175,12 +182,11 @@ public class ParallelTestExecutor extends Builder {
      * Collects all the test reports
      */
     private void tally(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws IOException, InterruptedException {
-        // TODO: offer up the configuration of this, or perhaps let the user configure it separately
         new JUnitResultArchiver("test-splits/reports/**/*.xml").perform(build,launcher,listener);
     }
 
     /**
-     * Create {@link TriggerBuilder} for launching test jobs.
+     * Create {@link hudson.plugins.parameterizedtrigger.TriggerBuilder} for launching test jobs.
      */
     private TriggerBuilder createTriggerBuilder() {
         // to let the caller job do a clean up, don't let the failure in the test job early-terminate the build process
@@ -213,7 +219,7 @@ public class ParallelTestExecutor extends Builder {
     }
 
     /**
-     * Recursive visits the structure inside {@link TestResult}.
+     * Recursive visits the structure inside {@link hudson.tasks.test.TestResult}.
      */
     private void collect(TestResult r, Map<String, TestClass> data) {
         if (r instanceof ClassResult) {
