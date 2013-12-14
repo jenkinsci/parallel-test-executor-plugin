@@ -19,6 +19,6 @@ f.entry(title:"Test report directory in the test job", field:"testReportFiles") 
 }
 f.advanced {
     f.entry(title:"Automatically archive JUnit test results", field:"archiveTestResults") {
-        f.checkbox()
+        f.checkbox(default: true)
     }
 }
