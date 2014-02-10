@@ -3,21 +3,8 @@ package org.jenkinsci.plugins.parallel_test_executor;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.Action;
-import hudson.model.AutoCompletionCandidates;
-import hudson.model.BuildListener;
-import hudson.model.Item;
-import hudson.model.ItemGroup;
-import hudson.model.Result;
-import hudson.model.TaskListener;
-import hudson.plugins.parameterizedtrigger.AbstractBuildParameterFactory;
-import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
-import hudson.plugins.parameterizedtrigger.BinaryFileParameterFactory;
-import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
-import hudson.plugins.parameterizedtrigger.BlockingBehaviour;
-import hudson.plugins.parameterizedtrigger.TriggerBuilder;
+import hudson.model.*;
+import hudson.plugins.parameterizedtrigger.*;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.tasks.junit.ClassResult;
@@ -32,12 +19,7 @@ import org.kohsuke.stapler.QueryParameter;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.PriorityQueue;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -50,13 +32,15 @@ public class ParallelTestExecutor extends Builder {
     private String patternFile;
     private String testReportFiles;
     private boolean doNotArchiveTestResults = false;
+    private List<AbstractBuildParameters> parameters;
 
     @DataBoundConstructor
-    public ParallelTestExecutor(Parallelism parallelism, String testJob, String patternFile, String testReportFiles, boolean archiveTestResults) {
+    public ParallelTestExecutor(Parallelism parallelism, String testJob, String patternFile, String testReportFiles, boolean archiveTestResults, List<AbstractBuildParameters> parameters) {
         this.parallelism = parallelism;
         this.testJob = testJob;
         this.patternFile = patternFile;
         this.testReportFiles = testReportFiles;
+        this.parameters = parameters;
         this.doNotArchiveTestResults = !archiveTestResults;
     }
 
@@ -80,6 +64,10 @@ public class ParallelTestExecutor extends Builder {
         return !doNotArchiveTestResults;
     }
 
+    public List<AbstractBuildParameters> getParameters() {
+        return parameters;
+    }
+
     /**
      * {@link org.jenkinsci.plugins.parallel_test_executor.TestClass}es are divided into multiple sets of roughly equal size.
      */
@@ -90,15 +78,15 @@ public class ParallelTestExecutor extends Builder {
         long total;
 
         void add(TestClass tc) {
-            assert tc.knapsack==null;
-            tc.knapsack=this;
-            total+=tc.duration;
+            assert tc.knapsack == null;
+            tc.knapsack = this;
+            total += tc.duration;
         }
 
         public int compareTo(Knapsack that) {
             long l = this.total - that.total;
-            if (l<0)    return -1;
-            if (l>0)    return 1;
+            if (l < 0) return -1;
+            if (l > 0) return 1;
             return 0;
         }
     }
@@ -169,7 +157,7 @@ public class ParallelTestExecutor extends Builder {
             }
         }
 
-        createTriggerBuilder().perform(build,launcher,listener);
+        createTriggerBuilder().perform(build, launcher, listener);
 
         if (isArchiveTestResults()) {
             tally(build, launcher, listener);
@@ -182,7 +170,7 @@ public class ParallelTestExecutor extends Builder {
      * Collects all the test reports
      */
     private void tally(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws IOException, InterruptedException {
-        new JUnitResultArchiver("test-splits/reports/**/*.xml").perform(build,launcher,listener);
+        new JUnitResultArchiver("test-splits/reports/**/*.xml", false, null).perform(build, launcher, listener);
     }
 
     /**
@@ -194,20 +182,26 @@ public class ParallelTestExecutor extends Builder {
         BlockingBehaviour blocking = new BlockingBehaviour(Result.ABORTED, Result.UNSTABLE, Result.FAILURE);
         final AtomicInteger iota = new AtomicInteger(0);
 
-        // actual logic of child process triggering is left up to the parameterized build
-        BlockableBuildTriggerConfig config = new BlockableBuildTriggerConfig(testJob,
-            blocking,
-            Collections.<AbstractBuildParameterFactory>singletonList(
-                new BinaryFileParameterFactory(getPatternFile(),"test-splits/split.*.txt")),
-            Collections.<AbstractBuildParameters>singletonList(
+        List<AbstractBuildParameters> parameterList = new ArrayList<AbstractBuildParameters>();
+        parameterList.add(
                 // put a marker action that we look for to collect test reports
                 new AbstractBuildParameters() {
                     @Override
-                    public Action getAction(AbstractBuild<?,?> build, TaskListener listener) throws IOException, InterruptedException, DontTriggerException {
+                    public Action getAction(AbstractBuild<?, ?> build, TaskListener listener) throws IOException, InterruptedException, DontTriggerException {
                         return new TestCollector(build, ParallelTestExecutor.this, iota.incrementAndGet());
                     }
-                }
-            )
+                });
+        if (parameters != null) {
+            parameterList.addAll(parameters);
+        }
+
+        // actual logic of child process triggering is left up to the parameterized build
+        BlockableBuildTriggerConfig config = new BlockableBuildTriggerConfig(
+                testJob,
+                blocking,
+                Collections.<AbstractBuildParameterFactory>singletonList(
+                        new BinaryFileParameterFactory(getPatternFile(), "test-splits/split.*.txt")),
+                parameterList
         );
 
         return new TriggerBuilder(config);
@@ -215,7 +209,7 @@ public class ParallelTestExecutor extends Builder {
 
 
     private long pow(long l) {
-        return l*l;
+        return l * l;
     }
 
     /**
@@ -237,12 +231,12 @@ public class ParallelTestExecutor extends Builder {
     }
 
     private TestResult findPreviousTestResult(AbstractBuild<?, ?> b) {
-        for (int i=0; i<10; i++) {// limit the search to a small number to avoid loading too much
+        for (int i = 0; i < 10; i++) {// limit the search to a small number to avoid loading too much
             b = b.getPreviousBuild();
-            if (b==null)    break;
+            if (b == null) break;
 
             AbstractTestResultAction tra = b.getTestResultAction();
-            if (tra==null)  continue;
+            if (tra == null) continue;
 
             Object o = tra.getResult();
             if (o instanceof TestResult) {
@@ -259,7 +253,7 @@ public class ParallelTestExecutor extends Builder {
             return true;
         }
 
-        public AutoCompletionCandidates doAutoCompleteTestJob(@QueryParameter String value,  @AncestorInPath Item self, @AncestorInPath ItemGroup container) {
+        public AutoCompletionCandidates doAutoCompleteTestJob(@QueryParameter String value, @AncestorInPath Item self, @AncestorInPath ItemGroup container) {
             return AutoCompletionCandidates.ofJobNames(AbstractProject.class, value, self, container);
         }
 
