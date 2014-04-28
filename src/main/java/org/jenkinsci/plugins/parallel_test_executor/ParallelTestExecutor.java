@@ -96,7 +96,7 @@ public class ParallelTestExecutor extends Builder {
         FilePath dir = build.getWorkspace().child("test-splits");
         dir.deleteRecursive();
 
-        TestResult tr = findPreviousTestResult(build);
+        TestResult tr = findPreviousTestResult(build, listener);
         if (tr == null) {
             listener.getLogger().println("No record available, so executing everything in one place");
             dir.child("split.1.txt").write("", "UTF-8"); // no exclusions
@@ -230,16 +230,18 @@ public class ParallelTestExecutor extends Builder {
         }
     }
 
-    private TestResult findPreviousTestResult(AbstractBuild<?, ?> b) {
-        for (int i = 0; i < 10; i++) {// limit the search to a small number to avoid loading too much
+    private TestResult findPreviousTestResult(AbstractBuild<?, ?> b, BuildListener listener) {
+        for (int i = 0; i < 20; i++) {// limit the search to a small number to avoid loading too much
             b = b.getPreviousBuild();
             if (b == null) break;
+            if(b.getResult() == null || !(b.getResult() == Result.SUCCESS || b.getResult() == Result.UNSTABLE)) continue;
 
             AbstractTestResultAction tra = b.getTestResultAction();
             if (tra == null) continue;
 
             Object o = tra.getResult();
             if (o instanceof TestResult) {
+                listener.getLogger().printf("Using build #%d as reference\n", b.getNumber());
                 return (TestResult) o;
             }
         }
