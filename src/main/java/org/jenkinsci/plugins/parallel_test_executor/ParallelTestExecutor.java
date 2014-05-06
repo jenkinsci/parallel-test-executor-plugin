@@ -1,5 +1,6 @@
 package org.jenkinsci.plugins.parallel_test_executor;
 
+import com.google.common.collect.ImmutableSet;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -26,6 +27,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Kohsuke Kawaguchi
  */
 public class ParallelTestExecutor extends Builder {
+    public static final int NUMBER_OF_BUILDS_TO_SEARCH = 20;
+    public static final ImmutableSet<Result> RESULTS_OF_BUILDS_TO_CONSIDER = ImmutableSet.of(Result.SUCCESS, Result.UNSTABLE);
     private Parallelism parallelism;
 
     private String testJob;
@@ -231,10 +234,10 @@ public class ParallelTestExecutor extends Builder {
     }
 
     private TestResult findPreviousTestResult(AbstractBuild<?, ?> b, BuildListener listener) {
-        for (int i = 0; i < 20; i++) {// limit the search to a small number to avoid loading too much
+        for (int i = 0; i < NUMBER_OF_BUILDS_TO_SEARCH; i++) {// limit the search to a small number to avoid loading too much
             b = b.getPreviousBuild();
             if (b == null) break;
-            if(b.getResult() == null || !(b.getResult() == Result.SUCCESS || b.getResult() == Result.UNSTABLE)) continue;
+            if(!RESULTS_OF_BUILDS_TO_CONSIDER.contains(b.getResult())) continue;
 
             AbstractTestResultAction tra = b.getTestResultAction();
             if (tra == null) continue;
