@@ -7,7 +7,7 @@
   </parent>
 
   <artifactId>parallel-test-executor</artifactId>
-  <version>1.5-SNAPSHOT</version>
+  <version>1.5</version>
   <packaging>hpi</packaging>
 
   <name>Jenkins Parallel Test Executor Plugin</name>
@@ -46,6 +46,7 @@
   <scm>
     <connection>scm:git:git://github.com/jenkinsci/${project.artifactId}-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:jenkinsci/${project.artifactId}-plugin.git</developerConnection>
+    <tag>parallel-test-executor-1.5</tag>
   </scm>
 
 </project>
