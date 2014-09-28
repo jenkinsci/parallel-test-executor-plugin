@@ -1,4 +1,4 @@
-TAG=jenkinsci/parallel-test-executor-plugin-demo
+TAG=jenkinsci/parallel-test-executor-demo
 
 build: releases
 	docker build -t $(TAG) .
