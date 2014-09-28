@@ -19,9 +19,12 @@ import org.kohsuke.stapler.QueryParameter;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.commons.io.Charsets;
 
 /**
  * @author Kohsuke Kawaguchi
@@ -74,7 +77,7 @@ public class ParallelTestExecutor extends Builder {
     /**
      * {@link org.jenkinsci.plugins.parallel_test_executor.TestClass}es are divided into multiple sets of roughly equal size.
      */
-    class Knapsack implements Comparable<Knapsack> {
+    static class Knapsack implements Comparable<Knapsack> {
         /**
          * Total duration of all {@link org.jenkinsci.plugins.parallel_test_executor.TestClass}es that are in this knapsack.
          */
@@ -98,11 +101,34 @@ public class ParallelTestExecutor extends Builder {
     public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
         FilePath dir = build.getWorkspace().child("test-splits");
         dir.deleteRecursive();
+        List<List<String>> splits = findTestSplits(parallelism, build, listener);
+        for (int i = 0; i < splits.size(); i++) {
+            OutputStream os = dir.child("split." + i + ".txt").write();
+            try {
+                PrintWriter pw = new PrintWriter(new OutputStreamWriter(os, Charsets.UTF_8));
+                for (String exclusion : splits.get(i)) {
+                    pw.println(exclusion);
+                }
+                pw.close();
+            } finally {
+                os.close();
+            }
+        }
 
+        createTriggerBuilder().perform(build, launcher, listener);
+
+        if (isArchiveTestResults()) {
+            tally(build, launcher, listener);
+        }
+
+        return true;
+    }
+
+    static List<List<String>> findTestSplits(Parallelism parallelism, Run<?,?> build, TaskListener listener) {
         TestResult tr = findPreviousTestResult(build, listener);
         if (tr == null) {
             listener.getLogger().println("No record available, so executing everything in one place");
-            dir.child("split.1.txt").write("", "UTF-8"); // no exclusions
+            return Collections.singletonList(Collections.<String>emptyList());
         } else {
 
             Map<String/*fully qualified class name*/, TestClass> data = new HashMap<String, TestClass>();
@@ -147,26 +173,19 @@ public class ParallelTestExecutor extends Builder {
             listener.getLogger().printf("%d test classes (%dms) divided into %d sets. Min=%dms, Average=%dms, Max=%dms, stddev=%dms\n",
                     data.size(), total, n, min, average, max, stddev);
 
-            // write out exclusion list
+            List<List<String>> r = new ArrayList<List<String>>();
             for (int i = 0; i < n; i++) {
-                PrintWriter w = new PrintWriter(new BufferedOutputStream(dir.child("split." + i + ".txt").write()));
                 Knapsack k = knapsacks.get(i);
+                List<String> exclusions = new ArrayList<String>();
+                r.add(exclusions);
                 for (TestClass d : sorted) {
                     if (d.knapsack == k) continue;
-                    w.println(d.getSourceFileName(".java"));
-                    w.println(d.getSourceFileName(".class"));
+                    exclusions.add(d.getSourceFileName(".java"));
+                    exclusions.add(d.getSourceFileName(".class"));
                 }
-                w.close();
             }
+            return r;
         }
-
-        createTriggerBuilder().perform(build, launcher, listener);
-
-        if (isArchiveTestResults()) {
-            tally(build, launcher, listener);
-        }
-
-        return true;
     }
 
     /**
@@ -211,14 +230,14 @@ public class ParallelTestExecutor extends Builder {
     }
 
 
-    private long pow(long l) {
+    private static long pow(long l) {
         return l * l;
     }
 
     /**
      * Recursive visits the structure inside {@link hudson.tasks.test.TestResult}.
      */
-    private void collect(TestResult r, Map<String, TestClass> data) {
+    static private void collect(TestResult r, Map<String, TestClass> data) {
         if (r instanceof ClassResult) {
             ClassResult cr = (ClassResult) r;
             TestClass dp = new TestClass(cr);
@@ -233,7 +252,7 @@ public class ParallelTestExecutor extends Builder {
         }
     }
 
-    private TestResult findPreviousTestResult(AbstractBuild<?, ?> b, BuildListener listener) {
+    private static TestResult findPreviousTestResult(Run<?, ?> b, TaskListener listener) {
         for (int i = 0; i < NUMBER_OF_BUILDS_TO_SEARCH; i++) {// limit the search to a small number to avoid loading too much
             b = b.getPreviousBuild();
             if (b == null) break;
