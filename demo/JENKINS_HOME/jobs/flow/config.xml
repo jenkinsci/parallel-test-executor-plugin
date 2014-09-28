@@ -1,0 +1,30 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job@0.1-beta-3">
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties/>
+  <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@0.1-beta-3">
+    <script>def splits = splitTests parallelism: new org.jenkinsci.plugins.parallel_test_executor.CountDrivenParallelism(5)
+def branches = [:]
+for (int i = 0; i &lt; splits.size(); i++) {
+  def exclusions = splits.get(i);
+  branches[&quot;split${i}&quot;] = {
+    node(&apos;standard&apos;) {
+      git url: &apos;https://github.com/jenkinsci/parallel-test-executor-plugin-sample&apos;
+      // TODO pending a cleaner way to write script-supplied content to a workspace file:
+      sh &quot;set +x; (for line in ${exclusions.join(&apos; &apos;)}; do echo \$line; done) &gt; exclusions.txt&quot;
+      sh &apos;MAVEN_OPTS= mvn clean test -Dmaven.test.failure.ignore&apos;
+      // TODO https://trello.com/c/7K5ekdL1/119-junitresultarchiver-should-aggregate-results workaround
+      archive &apos;target/surefire-reports/&apos;
+    }
+  }
+}
+parallel branches
+node { // see above
+  unarchive mapping: [&apos;target/surefire-reports/&apos; : &apos;.&apos;]
+  step($class: &apos;hudson.tasks.junit.JUnitResultArchiver&apos;, testResults: &apos;target/surefire-reports/*.xml&apos;)
+}</script>
+  </definition>
+  <triggers/>
+</flow-definition>
