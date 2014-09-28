@@ -4,7 +4,7 @@
 
 or to use the uploaded demo:
 
-    docker run -p 8080:8080 -ti jenkinsci/parallel-test-executor-plugin-demo
+    docker run -p 8080:8080 -ti jenkinsci/parallel-test-executor-demo
 
 and then go to: http://localhost:8080/
 
@@ -16,4 +16,4 @@ Click on _Credentials_ and enter a CloudBees DEV@cloud user account email and pa
 
 `flow` is a self-contained workflow project.
 
-https://github.com/jenkinsci/parallel-test-executor-plugin-sample/ is the demo project.
+[parallel-test-executor-plugin-sample](https://github.com/jenkinsci/parallel-test-executor-plugin-sample/) is the demo project.
