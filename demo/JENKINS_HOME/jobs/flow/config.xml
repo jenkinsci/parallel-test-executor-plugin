@@ -7,13 +7,18 @@
   <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@0.1-beta-3">
     <!-- TODO echo trick pending a cleaner way to write script-supplied content to a workspace file -->
     <!-- TODO https://trello.com/c/7K5ekdL1/119-junitresultarchiver-should-aggregate-results workaround is to archive surefire-reports -->
-    <script>def splits = splitTests parallelism: new org.jenkinsci.plugins.parallel_test_executor.CountDrivenParallelism(5)
+    <script>node('master') {
+  git url: 'https://github.com/jenkinsci/parallel-test-executor-plugin-sample'
+  archive 'pom.xml, src/'
+}
+def splits = splitTests parallelism: new org.jenkinsci.plugins.parallel_test_executor.CountDrivenParallelism(5)
 def branches = [:]
 for (int i = 0; i &lt; splits.size(); i++) {
   def exclusions = splits.get(i);
   branches["split${i}"] = {
     node('standard') {
-      git url: 'https://github.com/jenkinsci/parallel-test-executor-plugin-sample'
+      sh 'rm -rf *'
+      unarchive mapping: ['pom.xml' : '.', 'src/' : '.']
       sh "set +x; (for line in ${exclusions.join(' ')}; do echo \$line; done) > exclusions.txt"
       sh 'mvn clean test -Dmaven.test.failure.ignore'
       archive 'target/surefire-reports/'
