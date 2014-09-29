@@ -14,7 +14,7 @@ for (int i = 0; i &lt; splits.size(); i++) {
       git url: &apos;https://github.com/jenkinsci/parallel-test-executor-plugin-sample&apos;
       // TODO pending a cleaner way to write script-supplied content to a workspace file:
       sh &quot;set +x; (for line in ${exclusions.join(&apos; &apos;)}; do echo \$line; done) &gt; exclusions.txt&quot;
-      sh &apos;MAVEN_OPTS= mvn clean test -Dmaven.test.failure.ignore&apos;
+      sh &apos;mvn clean test -Dmaven.test.failure.ignore&apos;
       // TODO https://trello.com/c/7K5ekdL1/119-junitresultarchiver-should-aggregate-results workaround
       archive &apos;target/surefire-reports/&apos;
     }
