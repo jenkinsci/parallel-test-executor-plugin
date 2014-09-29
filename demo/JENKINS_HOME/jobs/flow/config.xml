@@ -21,7 +21,7 @@ for (int i = 0; i &lt; splits.size(); i++) {
   }
 }
 parallel branches
-node {
+node('master') {
   unarchive mapping: ['target/surefire-reports/' : '.']
   step($class: 'hudson.tasks.junit.JUnitResultArchiver', testResults: 'target/surefire-reports/*.xml')
 }</script>
