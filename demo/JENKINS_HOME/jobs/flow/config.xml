@@ -11,19 +11,19 @@
 def branches = [:]
 for (int i = 0; i &lt; splits.size(); i++) {
   def exclusions = splits.get(i);
-  branches[&quot;split${i}&quot;] = {
-    node(&apos;standard&apos;) {
-      git url: &apos;https://github.com/jenkinsci/parallel-test-executor-plugin-sample&apos;
-      sh &quot;set +x; (for line in ${exclusions.join(&apos; &apos;)}; do echo \$line; done) &gt; exclusions.txt&quot;
-      sh &apos;mvn clean test -Dmaven.test.failure.ignore&apos;
-      archive &apos;target/surefire-reports/&apos;
+  branches["split${i}"] = {
+    node('standard') {
+      git url: 'https://github.com/jenkinsci/parallel-test-executor-plugin-sample'
+      sh "set +x; (for line in ${exclusions.join(' ')}; do echo \$line; done) > exclusions.txt"
+      sh 'mvn clean test -Dmaven.test.failure.ignore'
+      archive 'target/surefire-reports/'
     }
   }
 }
 parallel branches
 node {
-  unarchive mapping: [&apos;target/surefire-reports/&apos; : &apos;.&apos;]
-  step($class: &apos;hudson.tasks.junit.JUnitResultArchiver&apos;, testResults: &apos;target/surefire-reports/*.xml&apos;)
+  unarchive mapping: ['target/surefire-reports/' : '.']
+  step($class: 'hudson.tasks.junit.JUnitResultArchiver', testResults: 'target/surefire-reports/*.xml')
 }</script>
   </definition>
   <triggers/>
