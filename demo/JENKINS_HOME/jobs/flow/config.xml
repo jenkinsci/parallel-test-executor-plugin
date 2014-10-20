@@ -20,7 +20,7 @@ for (int i = 0; i &lt; splits.size(); i++) {
       sh 'rm -rf *'
       unarchive mapping: ['pom.xml' : '.', 'src/' : '.']
       sh "set +x; (for line in ${exclusions.join(' ')}; do echo \$line; done) > exclusions.txt"
-      sh 'mvn clean test -Dmaven.test.failure.ignore'
+      sh 'mvn -B clean test -Dmaven.test.failure.ignore'
       archive 'target/surefire-reports/'
     }
   }
