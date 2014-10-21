@@ -3,7 +3,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>1.577</version><!-- which version of Jenkins is this plugin built against? -->
+    <version>1.580</version><!-- which version of Jenkins is this plugin built against? -->
   </parent>
 
   <artifactId>parallel-test-executor</artifactId>
@@ -12,6 +12,9 @@
 
   <name>Jenkins Parallel Test Executor Plugin</name>
   <url>http://wiki.jenkins-ci.org/display/JENKINS/Parallel+Text+Executor+Plugin</url>
+  <properties>
+    <workflow.version>0.1-beta-5</workflow.version>
+  </properties>
 
   <dependencies>
     <dependency>
@@ -22,23 +25,23 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>junit</artifactId>
-      <version>1.2-beta-1</version>
+      <version>1.2-beta-2</version>
     </dependency>
     <dependency>
       <groupId>org.jenkins-ci.plugins.workflow</groupId>
       <artifactId>workflow-step-api</artifactId>
-      <version>0.1-beta-3</version>
+      <version>${workflow.version}</version>
     </dependency>
     <dependency> <!-- For ease of demonstrating parallel-test-executor-plugin-sample -->
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>git</artifactId>
-      <version>2.3-beta-1</version>
+      <version>2.3-beta-3</version>
       <scope>test</scope>
     </dependency>
     <dependency> <!-- For ease of demonstrating workflows -->
       <groupId>org.jenkins-ci.plugins.workflow</groupId>
       <artifactId>workflow-aggregator</artifactId>
-      <version>0.1-beta-3</version>
+      <version>${workflow.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -55,5 +58,4 @@
     <developerConnection>scm:git:git@github.com:jenkinsci/${project.artifactId}-plugin.git</developerConnection>
     <tag>HEAD</tag>
   </scm>
-
 </project>

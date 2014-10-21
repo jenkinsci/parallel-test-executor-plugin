@@ -14,6 +14,7 @@ PLUGINS=\
 	org.jenkins-ci.plugins.workflow:workflow-api \
 	org.jenkins-ci.plugins.workflow:workflow-basic-steps \
 	org.jenkins-ci.plugins.workflow:workflow-cps \
+	org.jenkins-ci.plugins.workflow:workflow-cps-global-lib \
 	org.jenkins-ci.plugins.workflow:workflow-durable-task-step \
 	org.jenkins-ci.plugins.workflow:workflow-job \
 	org.jenkins-ci.plugins.workflow:workflow-scm-step \
