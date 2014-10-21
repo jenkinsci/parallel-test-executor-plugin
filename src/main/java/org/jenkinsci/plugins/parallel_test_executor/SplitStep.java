@@ -22,6 +22,10 @@ public final class SplitStep extends AbstractStepImpl {
         this.parallelism = parallelism;
     }
 
+    public Parallelism getParallelism() {
+        return parallelism;
+    }
+
     @Extension public static final class DescriptorImpl extends AbstractStepDescriptorImpl {
 
         public DescriptorImpl() {
