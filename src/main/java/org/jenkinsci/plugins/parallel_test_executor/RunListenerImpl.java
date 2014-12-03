@@ -8,7 +8,7 @@ import hudson.model.listeners.RunListener;
 import javax.annotation.Nonnull;
 
 /**
- * Looks fo {@Link TestCollector} in the build and collect the test reports.
+ * Looks for {@link TestCollector} in the build and collects the test reports.
  *
  * @author Kohsuke Kawaguchi
  */
