@@ -26,6 +26,7 @@ PLUGINS=\
 	org.jenkins-ci.plugins:durable-task \
 	org.jenkins-ci.plugins:git \
 	org.jenkins-ci.plugins:git-client \
+	org.jenkins-ci.plugins:git-server \
 	org.jenkins-ci.plugins:junit \
 	org.jenkins-ci.plugins:mapdb-api \
 	org.jenkins-ci.plugins:parallel-test-executor \
@@ -35,9 +36,14 @@ PLUGINS=\
 	org.jenkins-ci.plugins:ssh-credentials \
 	org.jenkins-ci.plugins:ssh-slaves
 
+# May define as -U to pick up newer releases; do this before make push!
+CHECK_UPDATES=
+
+BASELINE=$(shell perl -n -e 'print "$$1\n" and exit if m{<version>(.+)</version>}' ../pom.xml)
+
 releases:
-	[ -f jenkins-war.war ] || mvn org.apache.maven.plugins:maven-dependency-plugin:2.8:copy -Dartifact=org.jenkins-ci.main:jenkins-war:RELEASE:war -DoutputDirectory=. -Dmdep.stripVersion
-	set -e; for ga in $(PLUGINS); do a=$$(echo $$ga | sed 's/.*\://'); [ -f JENKINS_HOME/plugins/$$a.jpi ] || (mvn org.apache.maven.plugins:maven-dependency-plugin:2.8:copy -Dartifact=$$ga:RELEASE:hpi -DoutputDirectory=JENKINS_HOME/plugins -Dmdep.stripVersion && mv JENKINS_HOME/plugins/$$a.hpi JENKINS_HOME/plugins/$$a.jpi); touch JENKINS_HOME/plugins/$$a.jpi.pinned; done
+	[ -f jenkins-war.war ] || mvn org.apache.maven.plugins:maven-dependency-plugin:2.8:copy -Dartifact=org.jenkins-ci.main:jenkins-war:$(BASELINE):war -DoutputDirectory=. -Dmdep.stripVersion
+	set -e; for ga in $(PLUGINS); do a=$$(echo $$ga | sed 's/.*\://'); [ -f JENKINS_HOME/plugins/$$a.jpi ] || (mvn $(CHECK_UPDATES) org.apache.maven.plugins:maven-dependency-plugin:2.8:copy -Dartifact=$$ga:RELEASE:hpi -DoutputDirectory=JENKINS_HOME/plugins -Dmdep.stripVersion && mv JENKINS_HOME/plugins/$$a.hpi JENKINS_HOME/plugins/$$a.jpi); touch JENKINS_HOME/plugins/$$a.jpi.pinned; done
 
 clean:
 	rm -rf jenkins-war.war JENKINS_HOME/plugins
