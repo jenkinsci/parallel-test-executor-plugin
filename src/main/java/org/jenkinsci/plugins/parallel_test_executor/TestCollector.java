@@ -1,20 +1,18 @@
 package org.jenkinsci.plugins.parallel_test_executor;
 
 import hudson.FilePath;
-import hudson.FilePath.FileCallable;
 import hudson.Util;
 import hudson.console.ModelHyperlinkNote;
 import hudson.model.AbstractBuild;
 import hudson.model.InvisibleAction;
 import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;
-import hudson.util.IOException2;
-import org.apache.tools.ant.BuildException;
-import org.apache.tools.ant.taskdefs.Copy;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import jenkins.MasterToSlaveFileCallable;
+import org.apache.tools.ant.BuildException;
+import org.apache.tools.ant.taskdefs.Copy;
 
 /**
  * Runs at the end of a triggered test sub-task and collects test reports back to the master.
@@ -55,7 +53,7 @@ class TestCollector extends InvisibleAction implements Serializable {
             if (src.getChannel()==dst.getChannel()) {
                 // fast case where a direct copy is possible
                 // TODO: move this to the core. copyRecursiveTo + 'archive' semantics
-                src.act(new FileCallable<Integer>() {
+                src.act(new MasterToSlaveFileCallable<Integer>() {
                     private static final long serialVersionUID = 1L;
                     public Integer invoke(File base, VirtualChannel channel) throws IOException {
                         if(!base.exists())  return 0;
@@ -90,7 +88,7 @@ class TestCollector extends InvisibleAction implements Serializable {
                             copyTask.execute();
                             return copyTask.getNumCopied();
                         } catch (BuildException e) {
-                            throw new IOException2("Failed to copy "+base+"/"+includes+" to "+dst,e);
+                            throw new IOException("Failed to copy " + base + "/" + includes + " to " + dst, e);
                         }
                     }
                 });

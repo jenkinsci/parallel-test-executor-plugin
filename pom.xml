@@ -3,17 +3,17 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>1.580</version><!-- which version of Jenkins is this plugin built against? -->
+    <version>1.580.1</version>
   </parent>
 
   <artifactId>parallel-test-executor</artifactId>
-  <version>1.6-beta-3-SNAPSHOT</version>
+  <version>1.6-SNAPSHOT</version>
   <packaging>hpi</packaging>
 
   <name>Jenkins Parallel Test Executor Plugin</name>
   <url>http://wiki.jenkins-ci.org/display/JENKINS/Parallel+Text+Executor+Plugin</url>
   <properties>
-    <workflow.version>0.1-beta-5</workflow.version>
+    <workflow.version>1.0</workflow.version>
   </properties>
 
   <dependencies>
@@ -25,7 +25,7 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>junit</artifactId>
-      <version>1.2-beta-2</version>
+      <version>1.2</version>
     </dependency>
     <dependency>
       <groupId>org.jenkins-ci.plugins.workflow</groupId>
@@ -35,7 +35,7 @@
     <dependency> <!-- For ease of demonstrating parallel-test-executor-plugin-sample -->
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>git</artifactId>
-      <version>2.3-beta-3</version>
+      <version>2.3</version>
       <scope>test</scope>
     </dependency>
     <dependency> <!-- For ease of demonstrating workflows -->

@@ -9,7 +9,7 @@
   git url: 'https://github.com/jenkinsci/parallel-test-executor-plugin-sample'
   archive 'pom.xml, src/'
 }
-def splits = splitTests new org.jenkinsci.plugins.parallel_test_executor.CountDrivenParallelism(5)
+def splits = splitTests([$class: 'CountDrivenParallelism', size: 5])
 def branches = [:]
 for (int i = 0; i &lt; splits.size(); i++) {
   def exclusions = splits.get(i);
@@ -19,7 +19,7 @@ for (int i = 0; i &lt; splits.size(); i++) {
       unarchive mapping: ['pom.xml' : '.', 'src/' : '.']
       writeFile file: 'exclusions.txt', text: exclusions.join("\n")
       sh 'mvn -B clean test -Dmaven.test.failure.ignore'
-      step $class: 'hudson.tasks.junit.JUnitResultArchiver', testResults: 'target/surefire-reports/*.xml'
+      step([$class: 'JUnitResultArchiver', testResults: 'target/surefire-reports/*.xml'])
     }
   }
 }
