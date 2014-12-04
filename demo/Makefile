@@ -19,7 +19,6 @@ PLUGINS=\
 	org.jenkins-ci.plugins.workflow:workflow-job \
 	org.jenkins-ci.plugins.workflow:workflow-scm-step \
 	org.jenkins-ci.plugins.workflow:workflow-step-api \
-	org.jenkins-ci.plugins.workflow:workflow-stm \
 	org.jenkins-ci.plugins.workflow:workflow-support \
 	org.jenkins-ci.plugins:async-http-client \
 	org.jenkins-ci.plugins:credentials \
