@@ -1,4 +1,4 @@
-FROM dockerfile/java
+FROM java:7
 
 ADD JENKINS_HOME /var/lib/jenkins/
 ADD jenkins-war.war /var/lib/jenkins/jenkins.war
