@@ -11,7 +11,7 @@
   <packaging>hpi</packaging>
 
   <name>Jenkins Parallel Test Executor Plugin</name>
-  <url>http://wiki.jenkins-ci.org/display/JENKINS/Parallel+Text+Executor+Plugin</url>
+  <url>http://wiki.jenkins-ci.org/display/JENKINS/Parallel+Test+Executor+Plugin</url>
   <properties>
     <workflow.version>1.0</workflow.version>
   </properties>
