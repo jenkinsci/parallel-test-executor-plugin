@@ -11,6 +11,9 @@ f.entry(title:"Test job to run", field:"testJob") {
 f.entry(title:"Exclusion file name in the test job", field:"patternFile") {
     f.textbox()
 }
+f.entry(title:"Optional inclusion file name in the test job", field:"includesPatternFile") {
+    f.textbox()
+}
 f.entry(title:"Degree of parallelism", field:"parallelism") {
     f.hetero_radio(field:"parallelism", descriptors:Jenkins.instance.getDescriptorList(Parallelism.class))
 }

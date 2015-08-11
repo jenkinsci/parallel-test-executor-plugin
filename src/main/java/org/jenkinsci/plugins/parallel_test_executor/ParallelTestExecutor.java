@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableSet;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
+import hudson.Util;
 import hudson.model.*;
 import hudson.plugins.parameterizedtrigger.*;
 import hudson.tasks.BuildStepDescriptor;
@@ -17,7 +18,6 @@ import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
-import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -36,18 +36,20 @@ public class ParallelTestExecutor extends Builder {
 
     private String testJob;
     private String patternFile;
+    private String includesPatternFile;
     private String testReportFiles;
     private boolean doNotArchiveTestResults = false;
     private List<AbstractBuildParameters> parameters;
 
     @DataBoundConstructor
-    public ParallelTestExecutor(Parallelism parallelism, String testJob, String patternFile, String testReportFiles, boolean archiveTestResults, List<AbstractBuildParameters> parameters) {
+    public ParallelTestExecutor(Parallelism parallelism, String testJob, String patternFile, String testReportFiles, boolean archiveTestResults, List<AbstractBuildParameters> parameters, String includesPatternFile) {
         this.parallelism = parallelism;
         this.testJob = testJob;
         this.patternFile = patternFile;
         this.testReportFiles = testReportFiles;
         this.parameters = parameters;
         this.doNotArchiveTestResults = !archiveTestResults;
+        this.includesPatternFile = Util.fixEmpty(includesPatternFile);
     }
 
     public Parallelism getParallelism() {
@@ -60,6 +62,10 @@ public class ParallelTestExecutor extends Builder {
 
     public String getPatternFile() {
         return patternFile;
+    }
+
+    public String getIncludesPatternFile() {
+        return includesPatternFile;
     }
 
     public String getTestReportFiles() {
@@ -101,13 +107,14 @@ public class ParallelTestExecutor extends Builder {
     public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
         FilePath dir = build.getWorkspace().child("test-splits");
         dir.deleteRecursive();
-        List<List<String>> splits = findTestSplits(parallelism, build, listener);
+        List<InclusionExclusionPattern> splits = findTestSplits(parallelism, build, listener, includesPatternFile != null);
         for (int i = 0; i < splits.size(); i++) {
-            OutputStream os = dir.child("split." + i + ".txt").write();
+            InclusionExclusionPattern pattern = splits.get(i);
+            OutputStream os = dir.child("split." + i + "." + (pattern.includes ? "include" : "exclude") + ".txt").write();
             try {
                 PrintWriter pw = new PrintWriter(new OutputStreamWriter(os, Charsets.UTF_8));
-                for (String exclusion : splits.get(i)) {
-                    pw.println(exclusion);
+                for (String filePattern : pattern.list) {
+                    pw.println(filePattern);
                 }
                 pw.close();
             } finally {
@@ -124,11 +131,11 @@ public class ParallelTestExecutor extends Builder {
         return true;
     }
 
-    static List<List<String>> findTestSplits(Parallelism parallelism, Run<?,?> build, TaskListener listener) {
+    static List<InclusionExclusionPattern> findTestSplits(Parallelism parallelism, Run<?,?> build, TaskListener listener, boolean generateInclusions) {
         TestResult tr = findPreviousTestResult(build, listener);
         if (tr == null) {
             listener.getLogger().println("No record available, so executing everything in one place");
-            return Collections.singletonList(Collections.<String>emptyList());
+            return Collections.singletonList(new InclusionExclusionPattern(Collections.<String>emptyList(), false));
         } else {
 
             Map<String/*fully qualified class name*/, TestClass> data = new HashMap<String, TestClass>();
@@ -173,18 +180,30 @@ public class ParallelTestExecutor extends Builder {
             listener.getLogger().printf("%d test classes (%dms) divided into %d sets. Min=%dms, Average=%dms, Max=%dms, stddev=%dms\n",
                     data.size(), total, n, min, average, max, stddev);
 
-            List<List<String>> r = new ArrayList<List<String>>();
+            List<InclusionExclusionPattern> r = new ArrayList<InclusionExclusionPattern>();
             for (int i = 0; i < n; i++) {
                 Knapsack k = knapsacks.get(i);
-                List<String> exclusions = new ArrayList<String>();
-                r.add(exclusions);
+                boolean shouldIncludeElements = generateInclusions && i != 0;
+                List<String> elements = new ArrayList<String>();
+                r.add(new InclusionExclusionPattern(elements, shouldIncludeElements));
                 for (TestClass d : sorted) {
-                    if (d.knapsack == k) continue;
-                    exclusions.add(d.getSourceFileName(".java"));
-                    exclusions.add(d.getSourceFileName(".class"));
+                    if (shouldIncludeElements == (d.knapsack == k)) {
+                        elements.add(d.getSourceFileName(".java"));
+                        elements.add(d.getSourceFileName(".class"));
+                    }
                 }
             }
             return r;
+        }
+    }
+
+    static class InclusionExclusionPattern {
+        boolean includes;
+        List<String> list;
+
+        InclusionExclusionPattern(List<String> list, boolean includes) {
+            this.list = list;
+            this.includes = includes;
         }
     }
 
@@ -218,11 +237,16 @@ public class ParallelTestExecutor extends Builder {
         }
 
         // actual logic of child process triggering is left up to the parameterized build
+        List<MultipleBinaryFileParameterFactory.Tuple> tuples = new ArrayList<MultipleBinaryFileParameterFactory.Tuple>();
+        tuples.add(new MultipleBinaryFileParameterFactory.Tuple(getPatternFile(), "test-splits/split.*.exclude.txt"));
+        if (includesPatternFile != null) {
+            tuples.add(new MultipleBinaryFileParameterFactory.Tuple(getIncludesPatternFile(), "test-splits/split.*.include.txt"));
+        }
+        MultipleBinaryFileParameterFactory factory = new MultipleBinaryFileParameterFactory(tuples);
         BlockableBuildTriggerConfig config = new BlockableBuildTriggerConfig(
                 testJob,
                 blocking,
-                Collections.<AbstractBuildParameterFactory>singletonList(
-                        new BinaryFileParameterFactory(getPatternFile(), "test-splits/split.*.txt")),
+                Collections.<AbstractBuildParameterFactory>singletonList(factory),
                 parameterList
         );
 

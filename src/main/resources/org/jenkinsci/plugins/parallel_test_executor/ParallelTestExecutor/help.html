@@ -10,7 +10,14 @@
     and the test job is triggered for each unit, with the exclusion file placed inside the workspace at your specified location.
 
     <p>
-    You are responsible for configuring the build script in the test job to honor the exclusion file.
+    Optionally, if your test job supports it, you may provide a test-inclusion file name. If defined, the plugin will
+    generate inclusion lists for all parallel units but one which will still use exclusion list. This avoids new test
+    cases from being included in all units on their first run. If you don't use an inclusion file, when a new test is
+    added, the first build afterward will be executed in all the sub-builds,
+    because it's not in the exclusion list on any of the units.
+
+    <p>
+    You are responsible for configuring the build script in the test job to honor the exclusion and inclusion file.
     A standard technique is to write the build script to always refer to a fixed exclusion list file,
     and check in an empty file by that name to your SCM. You can then specify that file as the "exclusion file name"
     in the configuration of this builder, and the builder will overwrite the empty file from SCM
@@ -23,9 +30,4 @@
     <p>
     At the end of the executions of the test job, the specified report directories are brought back into
     this job's workspace, then the standard JUnit test report collector will tally them.
-
-    <p>
-    We use an exclusion list as opposed to an inclusion list so that newly added tests can be accounted for.
-    A related gotcha is that if a new test is added, the first build afterward will be executed in all the sub-builds,
-    because it's not in the exclusion list on any of the units.
 </div>
