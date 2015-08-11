@@ -42,14 +42,14 @@ public final class SplitStep extends AbstractStepImpl {
 
     }
 
-    public static final class Execution extends AbstractSynchronousStepExecution<List<List<String>>> {
+    public static final class Execution extends AbstractSynchronousStepExecution<List<InclusionExclusionPattern>> {
 
         @Inject private SplitStep step;
         @StepContextParameter private Run<?,?> build;
         @StepContextParameter private TaskListener listener;
 
-        @Override protected List<List<String>> run() throws Exception {
-            return ParallelTestExecutor.findTestSplits(step.parallelism, build, listener);
+        @Override protected List<InclusionExclusionPattern> run() throws Exception {
+            return ParallelTestExecutor.findTestSplits(step.parallelism, build, listener, false);
         }
 
     }

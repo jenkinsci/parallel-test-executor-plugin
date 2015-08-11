@@ -110,10 +110,10 @@ public class ParallelTestExecutor extends Builder {
         List<InclusionExclusionPattern> splits = findTestSplits(parallelism, build, listener, includesPatternFile != null);
         for (int i = 0; i < splits.size(); i++) {
             InclusionExclusionPattern pattern = splits.get(i);
-            OutputStream os = dir.child("split." + i + "." + (pattern.includes ? "include" : "exclude") + ".txt").write();
+            OutputStream os = dir.child("split." + i + "." + (pattern.isIncludes() ? "include" : "exclude") + ".txt").write();
             try {
                 PrintWriter pw = new PrintWriter(new OutputStreamWriter(os, Charsets.UTF_8));
-                for (String filePattern : pattern.list) {
+                for (String filePattern : pattern.getList()) {
                     pw.println(filePattern);
                 }
                 pw.close();
@@ -194,16 +194,6 @@ public class ParallelTestExecutor extends Builder {
                 }
             }
             return r;
-        }
-    }
-
-    static class InclusionExclusionPattern {
-        boolean includes;
-        List<String> list;
-
-        InclusionExclusionPattern(List<String> list, boolean includes) {
-            this.list = list;
-            this.includes = includes;
         }
     }
 
