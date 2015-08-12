@@ -16,6 +16,7 @@ import hudson.tasks.test.TabulatedResult;
 import hudson.tasks.test.TestResult;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
 import java.io.IOException;
@@ -25,6 +26,8 @@ import java.io.PrintWriter;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.io.Charsets;
+
+import javax.annotation.CheckForNull;
 
 /**
  * @author Kohsuke Kawaguchi
@@ -42,14 +45,13 @@ public class ParallelTestExecutor extends Builder {
     private List<AbstractBuildParameters> parameters;
 
     @DataBoundConstructor
-    public ParallelTestExecutor(Parallelism parallelism, String testJob, String patternFile, String testReportFiles, boolean archiveTestResults, List<AbstractBuildParameters> parameters, String includesPatternFile) {
+    public ParallelTestExecutor(Parallelism parallelism, String testJob, String patternFile, String testReportFiles, boolean archiveTestResults, List<AbstractBuildParameters> parameters) {
         this.parallelism = parallelism;
         this.testJob = testJob;
         this.patternFile = patternFile;
         this.testReportFiles = testReportFiles;
         this.parameters = parameters;
         this.doNotArchiveTestResults = !archiveTestResults;
-        this.includesPatternFile = Util.fixEmpty(includesPatternFile);
     }
 
     public Parallelism getParallelism() {
@@ -64,8 +66,14 @@ public class ParallelTestExecutor extends Builder {
         return patternFile;
     }
 
+    @CheckForNull
     public String getIncludesPatternFile() {
         return includesPatternFile;
+    }
+
+    @DataBoundSetter
+    public void setIncludesPatternFile(String includesPatternFile) {
+        this.includesPatternFile = Util.fixEmpty(includesPatternFile);
     }
 
     public String getTestReportFiles() {
@@ -227,12 +235,12 @@ public class ParallelTestExecutor extends Builder {
         }
 
         // actual logic of child process triggering is left up to the parameterized build
-        List<MultipleBinaryFileParameterFactory.Tuple> tuples = new ArrayList<MultipleBinaryFileParameterFactory.Tuple>();
-        tuples.add(new MultipleBinaryFileParameterFactory.Tuple(getPatternFile(), "test-splits/split.*.exclude.txt"));
+        List<MultipleBinaryFileParameterFactory.ParameterBinding> parameterBindings = new ArrayList<MultipleBinaryFileParameterFactory.ParameterBinding>();
+        parameterBindings.add(new MultipleBinaryFileParameterFactory.ParameterBinding(getPatternFile(), "test-splits/split.*.exclude.txt"));
         if (includesPatternFile != null) {
-            tuples.add(new MultipleBinaryFileParameterFactory.Tuple(getIncludesPatternFile(), "test-splits/split.*.include.txt"));
+            parameterBindings.add(new MultipleBinaryFileParameterFactory.ParameterBinding(getIncludesPatternFile(), "test-splits/split.*.include.txt"));
         }
-        MultipleBinaryFileParameterFactory factory = new MultipleBinaryFileParameterFactory(tuples);
+        MultipleBinaryFileParameterFactory factory = new MultipleBinaryFileParameterFactory(parameterBindings);
         BlockableBuildTriggerConfig config = new BlockableBuildTriggerConfig(
                 testJob,
                 blocking,

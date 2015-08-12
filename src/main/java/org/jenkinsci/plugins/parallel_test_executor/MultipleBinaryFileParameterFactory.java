@@ -12,7 +12,6 @@ import hudson.plugins.parameterizedtrigger.AbstractBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameterFactoryDescriptor;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
 import hudson.plugins.parameterizedtrigger.FileBuildParameterFactory;
-import hudson.util.IOException2;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.File;
@@ -25,12 +24,10 @@ import java.util.logging.Logger;
 /**
  * Essentially a copy-paste of {@link hudson.plugins.parameterizedtrigger.BinaryFileParameterFactory} that takes a
  * list of mappings "name -> filePattern" to generate parameters.
- *
- * @author Vincent Latombe <vincent@latombe.net>
  */
 public class MultipleBinaryFileParameterFactory extends AbstractBuildParameterFactory {
-    public static class Tuple {
-        public Tuple(String parameterName, String filePattern) {
+    public static class ParameterBinding {
+        public ParameterBinding(String parameterName, String filePattern) {
             this.parameterName = parameterName;
             this.filePattern = filePattern;
         }
@@ -38,16 +35,16 @@ public class MultipleBinaryFileParameterFactory extends AbstractBuildParameterFa
         public final String filePattern;
     }
 
-    private final List<Tuple> parametersList;
+    private final List<ParameterBinding> parametersList;
     private final FileBuildParameterFactory.NoFilesFoundEnum noFilesFoundAction;
 
     @DataBoundConstructor
-    public MultipleBinaryFileParameterFactory(List<Tuple> parametersList, FileBuildParameterFactory.NoFilesFoundEnum noFilesFoundAction) {
+    public MultipleBinaryFileParameterFactory(List<ParameterBinding> parametersList, FileBuildParameterFactory.NoFilesFoundEnum noFilesFoundAction) {
         this.parametersList = parametersList;
         this.noFilesFoundAction = noFilesFoundAction;
     }
 
-    public MultipleBinaryFileParameterFactory(List<Tuple> parametersList) {
+    public MultipleBinaryFileParameterFactory(List<ParameterBinding> parametersList) {
         this(parametersList, FileBuildParameterFactory.NoFilesFoundEnum.SKIP);
     }
 
@@ -59,29 +56,20 @@ public class MultipleBinaryFileParameterFactory extends AbstractBuildParameterFa
     public List<AbstractBuildParameters> getParameters(AbstractBuild<?, ?> build, TaskListener listener) throws IOException, InterruptedException, AbstractBuildParameters.DontTriggerException {
         List<AbstractBuildParameters> result = Lists.newArrayList();
         int totalFiles = 0;
-        for (final Tuple t : parametersList) {
+        for (final ParameterBinding parameterBinding : parametersList) {
             // save them into the master because FileParameterValue might need files after the slave workspace have disappeared/reused
             FilePath target = new FilePath(build.getRootDir()).child("parameter-files");
-                int k = build.getWorkspace().copyRecursiveTo(t.filePattern, target);
+                int k = build.getWorkspace().copyRecursiveTo(parameterBinding.filePattern, target);
                 totalFiles += k;
                 if (k > 0) {
-                    for (final FilePath f : target.list(t.filePattern)) {
+                    for (final FilePath f : target.list(parameterBinding.filePattern)) {
                         LOGGER.fine("Triggering build with " + f.getName());
 
                         result.add(new AbstractBuildParameters() {
                             @Override
                             public Action getAction(AbstractBuild<?, ?> build, TaskListener listener) throws IOException, InterruptedException, DontTriggerException {
                                 assert f.getChannel() == null;    // we copied files locally. This file must be local to the master
-                                FileParameterValue fv = new FileParameterValue(t.parameterName, new File(f.getRemote()), f.getName());
-                                if ($setLocation != null) {
-                                    try {
-                                        $setLocation.invoke(fv, t.parameterName);
-                                    } catch (IllegalAccessException e) {
-                                        // be defensive as the core might change
-                                    } catch (InvocationTargetException e) {
-                                        // be defensive as the core might change
-                                    }
-                                }
+                                FileParameterValue fv = new FileParameterValue(parameterBinding.parameterName, new File(f.getRemote()), f.getName());
                                 return new ParametersAction(fv);
                             }
                         });
@@ -104,16 +92,5 @@ public class MultipleBinaryFileParameterFactory extends AbstractBuildParameterFa
         }
     }
 
-    private static Method $setLocation;
-
-    static {
-        // work around NPE fixed in the core at 4a95cc6f9269108e607077dc9fd57f06e4c9af26
-        try {
-            $setLocation = FileParameterValue.class.getDeclaredMethod("setLocation",String.class);
-            $setLocation.setAccessible(true);
-        } catch (NoSuchMethodException e) {
-            // ignore
-        }
-    }
     private static final Logger LOGGER = Logger.getLogger(MultipleBinaryFileParameterFactory.class.getName());
 }

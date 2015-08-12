@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * @author Vincent Latombe <vincent@latombe.net>
+ * A list of file name patterns to include or exclude
  */
 public class InclusionExclusionPattern {
     public boolean isIncludes() {
@@ -18,7 +18,7 @@ public class InclusionExclusionPattern {
     private final boolean includes;
     private final List<String> list;
 
-    InclusionExclusionPattern(List<String> list, boolean includes) {
+    public InclusionExclusionPattern(List<String> list, boolean includes) {
         this.list = list;
         this.includes = includes;
     }
