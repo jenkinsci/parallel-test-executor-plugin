@@ -9,15 +9,16 @@
   git url: 'https://github.com/jenkinsci/parallel-test-executor-plugin-sample'
   archive 'pom.xml, src/'
 }
-def splits = splitTests([$class: 'CountDrivenParallelism', size: 5])
+def splits = splitTests(parallelism: [$class: 'CountDrivenParallelism', size: 5], generateInclusions: true)
 def branches = [:]
 for (int i = 0; i &lt; splits.size(); i++) {
-  def exclusions = splits.get(i);
+  def split = splits.get(i);
   branches["split${i}"] = {
     node('standard') {
       sh 'rm -rf *'
       unarchive mapping: ['pom.xml' : '.', 'src/' : '.']
-      writeFile file: 'exclusions.txt', text: exclusions.join("\n")
+      writeFile file: (split.includes ? 'inclusions.txt' : 'exclusions.txt'), text: split.list.join("\n")
+      writeFile file: (split.includes ? 'exclusions.txt' : 'inclusions.txt'), text: ''
       sh 'mvn -B clean test -Dmaven.test.failure.ignore'
       step([$class: 'JUnitResultArchiver', testResults: 'target/surefire-reports/*.xml'])
     }

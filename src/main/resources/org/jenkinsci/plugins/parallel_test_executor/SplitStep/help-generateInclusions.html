@@ -1,0 +1,9 @@
+<p>If disabled, the splitStep call will return a <i>List&lt;List&lt;String&gt;&gt;</i> containing the exclusion patterns for the different buckets.</p>
+
+<p>If enabled, the splitStep call won't return a <i>List&lt;List&lt;String&gt;&gt;</i>.<br/>
+Instead it will return a <i>List</i> of a structure with :
+<ul>
+    <li><i>boolean includes</i> whether the following list is an inclusion or an exclusion list</li>
+    <li><i>List&lt;String&gt; list</i> the list of patterns</li>
+</ul>
+</p>

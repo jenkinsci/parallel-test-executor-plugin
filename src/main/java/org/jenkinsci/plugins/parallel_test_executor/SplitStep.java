@@ -4,12 +4,18 @@ import com.google.inject.Inject;
 import hudson.Extension;
 import hudson.model.Run;
 import hudson.model.TaskListener;
+
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
 import org.jenkinsci.plugins.workflow.steps.AbstractStepDescriptorImpl;
 import org.jenkinsci.plugins.workflow.steps.AbstractStepImpl;
 import org.jenkinsci.plugins.workflow.steps.AbstractSynchronousStepExecution;
+import org.jenkinsci.plugins.workflow.steps.Step;
 import org.jenkinsci.plugins.workflow.steps.StepContextParameter;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 
 /**
  * Allows the splitting logic to be accessed from a workflow.
@@ -18,12 +24,21 @@ public final class SplitStep extends AbstractStepImpl {
 
     private final Parallelism parallelism;
 
+    private boolean generateInclusions;
+
     @DataBoundConstructor public SplitStep(Parallelism parallelism) {
         this.parallelism = parallelism;
     }
 
     public Parallelism getParallelism() {
         return parallelism;
+    }
+
+    public boolean isGenerateInclusions() { return generateInclusions; }
+
+    @DataBoundSetter
+    public void setGenerateInclusions(boolean generateInclusions) {
+        this.generateInclusions = generateInclusions;
     }
 
     @Extension public static final class DescriptorImpl extends AbstractStepDescriptorImpl {
@@ -42,14 +57,22 @@ public final class SplitStep extends AbstractStepImpl {
 
     }
 
-    public static final class Execution extends AbstractSynchronousStepExecution<List<InclusionExclusionPattern>> {
+    public static final class Execution extends AbstractSynchronousStepExecution<List<?>> {
 
         @Inject private SplitStep step;
         @StepContextParameter private Run<?,?> build;
         @StepContextParameter private TaskListener listener;
 
-        @Override protected List<InclusionExclusionPattern> run() throws Exception {
-            return ParallelTestExecutor.findTestSplits(step.parallelism, build, listener, false);
+        @Override protected List<?> run() throws Exception {
+            if (step.generateInclusions) {
+                return ParallelTestExecutor.findTestSplits(step.parallelism, build, listener, step.generateInclusions);
+            } else {
+                List<List<String>> result = new ArrayList<List<String>>();
+                for (InclusionExclusionPattern pattern : ParallelTestExecutor.findTestSplits(step.parallelism, build, listener, step.generateInclusions)) {
+                    result.add(pattern.getList());
+                }
+                return result;
+            }
         }
 
     }
