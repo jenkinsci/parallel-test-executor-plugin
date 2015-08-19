@@ -17,6 +17,7 @@
         <size>5</size>
       </parallelism>
       <testJob>sub</testJob>
+      <includesPatternFile>inclusions.txt</includesPatternFile>
       <patternFile>exclusions.txt</patternFile>
       <testReportFiles>**/target/surefire-reports/</testReportFiles>
       <doNotArchiveTestResults>false</doNotArchiveTestResults>

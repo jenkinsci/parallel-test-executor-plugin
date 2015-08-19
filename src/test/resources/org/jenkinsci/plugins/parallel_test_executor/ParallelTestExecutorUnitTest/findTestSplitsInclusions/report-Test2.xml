@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jenkinsci.plugins.parallel_test_executor.Test2" time="110.00" tests="20" errors="0" skipped="0" failures="0">
+  <testcase name="test2Case1" classname="org.jenkinsci.plugins.parallel_test_executor.Test2" time="1.00"/>
+  <testcase name="test2Case2" classname="org.jenkinsci.plugins.parallel_test_executor.Test2" time="2.00"/>
+  <testcase name="test2Case3" classname="org.jenkinsci.plugins.parallel_test_executor.Test2" time="3.00"/>
+  <testcase name="test2Case4" classname="org.jenkinsci.plugins.parallel_test_executor.Test2" time="4.00"/>
+  <testcase name="test2Case5" classname="org.jenkinsci.plugins.parallel_test_executor.Test2" time="5.00"/>
+  <testcase name="test2Case6" classname="org.jenkinsci.plugins.parallel_test_executor.Test2" time="6.00"/>
+  <testcase name="test2Case7" classname="org.jenkinsci.plugins.parallel_test_executor.Test2" time="7.00"/>
+  <testcase name="test2Case8" classname="org.jenkinsci.plugins.parallel_test_executor.Test2" time="8.00"/>
+  <testcase name="test2Case9" classname="org.jenkinsci.plugins.parallel_test_executor.Test2" time="9.00"/>
+  <testcase name="test2Case10" classname="org.jenkinsci.plugins.parallel_test_executor.Test2" time="10.00"/>
+  <testcase name="test2Case11" classname="org.jenkinsci.plugins.parallel_test_executor.Test2" time="1.00"/>
+  <testcase name="test2Case12" classname="org.jenkinsci.plugins.parallel_test_executor.Test2" time="2.00"/>
+  <testcase name="test2Case13" classname="org.jenkinsci.plugins.parallel_test_executor.Test2" time="3.00"/>
+  <testcase name="test2Case14" classname="org.jenkinsci.plugins.parallel_test_executor.Test2" time="4.00"/>
+  <testcase name="test2Case15" classname="org.jenkinsci.plugins.parallel_test_executor.Test2" time="5.00"/>
+  <testcase name="test2Case16" classname="org.jenkinsci.plugins.parallel_test_executor.Test2" time="6.00"/>
+  <testcase name="test2Case17" classname="org.jenkinsci.plugins.parallel_test_executor.Test2" time="7.00"/>
+  <testcase name="test2Case18" classname="org.jenkinsci.plugins.parallel_test_executor.Test2" time="8.00"/>
+  <testcase name="test2Case19" classname="org.jenkinsci.plugins.parallel_test_executor.Test2" time="9.00"/>
+  <testcase name="test2Case20" classname="org.jenkinsci.plugins.parallel_test_executor.Test2" time="10.22"/>
+</testsuite>

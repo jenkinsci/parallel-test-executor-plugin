@@ -4,4 +4,7 @@
     <f:entry field="parallelism">
         <f:dropdownDescriptorSelector field="parallelism" title="Degree of parallelism"/>
     </f:entry>
+    <f:entry field="generateInclusions">
+        <f:checkbox title="Generate inclusion patterns"/>
+    </f:entry>
 </j:jelly>

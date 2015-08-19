@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jenkinsci.plugins.parallel_test_executor.Test4" time="110.00" tests="20" errors="0" skipped="0" failures="0">
+  <testcase name="test4Case1" classname="org.jenkinsci.plugins.parallel_test_executor.Test4" time="1.00"/>
+  <testcase name="test4Case2" classname="org.jenkinsci.plugins.parallel_test_executor.Test4" time="2.00"/>
+  <testcase name="test4Case3" classname="org.jenkinsci.plugins.parallel_test_executor.Test4" time="3.00"/>
+  <testcase name="test4Case4" classname="org.jenkinsci.plugins.parallel_test_executor.Test4" time="4.00"/>
+  <testcase name="test4Case5" classname="org.jenkinsci.plugins.parallel_test_executor.Test4" time="5.00"/>
+  <testcase name="test4Case6" classname="org.jenkinsci.plugins.parallel_test_executor.Test4" time="6.00"/>
+  <testcase name="test4Case7" classname="org.jenkinsci.plugins.parallel_test_executor.Test4" time="7.00"/>
+  <testcase name="test4Case8" classname="org.jenkinsci.plugins.parallel_test_executor.Test4" time="8.00"/>
+  <testcase name="test4Case9" classname="org.jenkinsci.plugins.parallel_test_executor.Test4" time="9.00"/>
+  <testcase name="test4Case10" classname="org.jenkinsci.plugins.parallel_test_executor.Test4" time="10.00"/>
+  <testcase name="test4Case11" classname="org.jenkinsci.plugins.parallel_test_executor.Test4" time="1.00"/>
+  <testcase name="test4Case12" classname="org.jenkinsci.plugins.parallel_test_executor.Test4" time="2.00"/>
+  <testcase name="test4Case13" classname="org.jenkinsci.plugins.parallel_test_executor.Test4" time="3.00"/>
+  <testcase name="test4Case14" classname="org.jenkinsci.plugins.parallel_test_executor.Test4" time="4.00"/>
+  <testcase name="test4Case15" classname="org.jenkinsci.plugins.parallel_test_executor.Test4" time="5.00"/>
+  <testcase name="test4Case16" classname="org.jenkinsci.plugins.parallel_test_executor.Test4" time="6.00"/>
+  <testcase name="test4Case17" classname="org.jenkinsci.plugins.parallel_test_executor.Test4" time="7.00"/>
+  <testcase name="test4Case18" classname="org.jenkinsci.plugins.parallel_test_executor.Test4" time="8.00"/>
+  <testcase name="test4Case19" classname="org.jenkinsci.plugins.parallel_test_executor.Test4" time="9.00"/>
+  <testcase name="test4Case20" classname="org.jenkinsci.plugins.parallel_test_executor.Test4" time="10.22"/>
+</testsuite>
