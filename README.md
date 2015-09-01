@@ -1,0 +1,1 @@
+https://wiki.jenkins-ci.org/display/JENKINS/Parallel+Test+Executor+Plugin
