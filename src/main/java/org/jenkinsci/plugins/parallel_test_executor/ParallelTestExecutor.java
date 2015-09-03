@@ -9,8 +9,10 @@ import hudson.model.*;
 import hudson.plugins.parameterizedtrigger.*;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
+import hudson.tasks.junit.CaseResult;
 import hudson.tasks.junit.ClassResult;
 import hudson.tasks.junit.JUnitResultArchiver;
+import hudson.tasks.junit.SuiteResult;
 import hudson.tasks.test.AbstractTestResultAction;
 import hudson.tasks.test.TabulatedResult;
 import hudson.tasks.test.TestResult;
@@ -115,7 +117,7 @@ public class ParallelTestExecutor extends Builder {
     public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
         FilePath dir = build.getWorkspace().child("test-splits");
         dir.deleteRecursive();
-        List<InclusionExclusionPattern> splits = findTestSplits(parallelism, build, listener, includesPatternFile != null);
+        List<InclusionExclusionPattern> splits = findTestSplits(parallelism, build, listener, includesPatternFile != null, null);
         for (int i = 0; i < splits.size(); i++) {
             InclusionExclusionPattern pattern = splits.get(i);
             OutputStream os = dir.child("split." + i + "." + (pattern.isIncludes() ? "include" : "exclude") + ".txt").write();
@@ -139,15 +141,20 @@ public class ParallelTestExecutor extends Builder {
         return true;
     }
 
-    static List<InclusionExclusionPattern> findTestSplits(Parallelism parallelism, Run<?,?> build, TaskListener listener, boolean generateInclusions) {
+    static List<InclusionExclusionPattern> findTestSplits(Parallelism parallelism, Run<?,?> build, TaskListener listener, boolean generateInclusions, @CheckForNull String archiveId) {
         TestResult tr = findPreviousTestResult(build, listener);
         if (tr == null) {
             listener.getLogger().println("No record available, so executing everything in one place");
             return Collections.singletonList(new InclusionExclusionPattern(Collections.<String>emptyList(), false));
         } else {
-
+            archiveId = Util.fixEmptyAndTrim(archiveId);
             Map<String/*fully qualified class name*/, TestClass> data = new HashMap<String, TestClass>();
-            collect(tr, data);
+            collect(tr, data, archiveId);
+            if (data.isEmpty() && archiveId != null) {
+                listener.getLogger().println("No test suites with archive id \""+archiveId+"\" recorded, "
+                        + "so executing everything in one place");
+                return Collections.singletonList(new InclusionExclusionPattern(Collections.<String>emptyList(), false));
+            }
 
             // sort in the descending order of the duration
             List<TestClass> sorted = new ArrayList<TestClass>(data.values());
@@ -209,7 +216,9 @@ public class ParallelTestExecutor extends Builder {
      * Collects all the test reports
      */
     private void tally(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws IOException, InterruptedException {
-        new JUnitResultArchiver("test-splits/reports/**/*.xml", false, null).perform(build, launcher, listener);
+        JUnitResultArchiver archiver = new JUnitResultArchiver("test-splits/reports/**/*.xml");
+        archiver.setKeepLongStdio(false);
+        archiver.perform(build, launcher, listener);
     }
 
     /**
@@ -259,17 +268,28 @@ public class ParallelTestExecutor extends Builder {
     /**
      * Recursive visits the structure inside {@link hudson.tasks.test.TestResult}.
      */
-    static private void collect(TestResult r, Map<String, TestClass> data) {
+    static private void collect(TestResult r, Map<String, TestClass> data, @CheckForNull String archiveId) {
+        archiveId = Util.fixEmptyAndTrim(archiveId);
         if (r instanceof ClassResult) {
             ClassResult cr = (ClassResult) r;
             TestClass dp = new TestClass(cr);
             data.put(dp.className, dp);
             return; // no need to go deeper
         }
-        if (r instanceof TabulatedResult) {
+        if (archiveId != null && r instanceof hudson.tasks.junit.TestResult) {
+            for (SuiteResult sr : ((hudson.tasks.junit.TestResult)r).getSuites()) {
+                if(archiveId.equals(sr.getArchiveId())) {
+                    for (CaseResult csr : sr.getCases()) {
+                        if (!data.containsKey(csr.getClassName())) {
+                            collect(csr.getParent(), data, archiveId);
+                        }
+                    }
+                }
+            }
+        } else if (r instanceof TabulatedResult) {
             TabulatedResult tr = (TabulatedResult) r;
             for (TestResult child : tr.getChildren()) {
-                collect(child, data);
+                collect(child, data, archiveId);
             }
         }
     }

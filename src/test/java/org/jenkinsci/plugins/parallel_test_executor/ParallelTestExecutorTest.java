@@ -21,5 +21,4 @@ public class ParallelTestExecutorTest {
 
         assertTrue(trigger.isArchiveTestResults());
     }
-
 }
