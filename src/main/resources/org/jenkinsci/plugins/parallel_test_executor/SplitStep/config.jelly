@@ -4,7 +4,12 @@
     <f:entry field="parallelism">
         <f:dropdownDescriptorSelector field="parallelism" title="Degree of parallelism"/>
     </f:entry>
-    <f:entry field="generateInclusions">
-        <f:checkbox title="Generate inclusion patterns"/>
-    </f:entry>
+    <f:advanced>
+        <f:entry field="generateInclusions">
+            <f:checkbox title="Generate inclusion patterns"/>
+        </f:entry>
+        <f:entry field="archiveId" title="Test suite archive id">
+            <f:textbox />
+        </f:entry>
+    </f:advanced>
 </j:jelly>

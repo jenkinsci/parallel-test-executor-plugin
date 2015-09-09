@@ -29,6 +29,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
@@ -63,8 +64,9 @@ public class ParallelTestExecutorUnitTest {
 
     @Before
     public void findProjectRoot() throws Exception {
-        URL url = getClass().getResource(getClass().getSimpleName() + "/" + this.name.getMethodName());
-        assumeThat("The test resource for " + this.name.getMethodName() + " exist", url, Matchers.notNullValue());
+        String methodName = this.name.getMethodName();
+        URL url = getClass().getResource(getClass().getSimpleName() + "/" + methodName);
+        assumeThat("The test resource for " + methodName + " exist", url, Matchers.notNullValue());
         try {
             projectRootDir = new File(url.toURI());
         } catch (URISyntaxException e) {
@@ -82,11 +84,23 @@ public class ParallelTestExecutorUnitTest {
         when(action.getResult()).thenReturn(testResult);
 
         CountDrivenParallelism parallelism = new CountDrivenParallelism(5);
-        List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, build, listener, false);
+        List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, build, listener, false, null);
         assertEquals(5, splits.size());
+        assertEquals(8, splits.get(2).getList().size());
         for (InclusionExclusionPattern split : splits) {
             assertFalse(split.isIncludes());
         }
+
+        //Should find Test5 in there
+        for (InclusionExclusionPattern split : splits) {
+            for (String pattern : split.getList()) {
+                if (pattern.equals("org/jenkinsci/plugins/parallel_test_executor/Test5.class")) {
+                    //found it!
+                    return;
+                }
+            }
+        }
+        fail("org/jenkinsci/plugins/parallel_test_executor/Test5.class should be in the list");
     }
 
     @Test
@@ -96,7 +110,7 @@ public class ParallelTestExecutorUnitTest {
         when(action.getResult()).thenReturn(testResult);
 
         CountDrivenParallelism parallelism = new CountDrivenParallelism(5);
-        List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, build, listener, true);
+        List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, build, listener, true, null);
         assertEquals(5, splits.size());
         List<String> exclusions = new ArrayList<String>(splits.get(0).getList());
         List<String> inclusions = new ArrayList<String>();
@@ -107,6 +121,7 @@ public class ParallelTestExecutorUnitTest {
                 inclusions.addAll(split.getList());
             }
         }
+        assertFalse("Inclusions should contain something", inclusions.isEmpty());
         Collections.sort(exclusions);
         Collections.sort(inclusions);
         assertEquals("exclusions set should contain all elements included by inclusions set", inclusions, exclusions);
