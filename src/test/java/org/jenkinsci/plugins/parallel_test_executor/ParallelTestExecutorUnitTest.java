@@ -77,13 +77,23 @@ public class ParallelTestExecutorUnitTest {
 
     @Test
     public void findTestSplits() throws Exception {
+        CountDrivenParallelism parallelism = new CountDrivenParallelism(5);
+        checkTestSplits(parallelism, 5, TestCaseCentricFormat.DISABLED);
+    }
+    
+    @Test
+    public void findTestCaseTimeSplitsExclusion() throws Exception {
+        TimeDrivenParallelism parallelism = new TimeDrivenParallelism(2);
+        checkTestSplits(parallelism, 5, TestCaseCentricFormat.CLNAME_DOT_TCNAME);
+    }
+
+    public void checkTestSplits(Parallelism parallelism, int expectedSplitSize, TestCaseCentricFormat caseCentricFormat) throws Exception {
         TestResult testResult = new TestResult(0L, scanner, false);
         testResult.tally();
         when(action.getResult()).thenReturn(testResult);
 
-        CountDrivenParallelism parallelism = new CountDrivenParallelism(5);
-        List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, build, listener, false);
-        assertEquals(5, splits.size());
+        List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, build, listener, false, caseCentricFormat);
+        assertEquals(expectedSplitSize, splits.size());
         for (InclusionExclusionPattern split : splits) {
             assertFalse(split.isIncludes());
         }
@@ -91,13 +101,23 @@ public class ParallelTestExecutorUnitTest {
 
     @Test
     public void findTestSplitsInclusions() throws Exception {
+        CountDrivenParallelism parallelism = new CountDrivenParallelism(5);
+        checkTestSplitsInclusions(parallelism, 5, null);
+    }
+    
+    @Test
+    public void findTestCaseTimeSplitsInclusion() throws Exception {
+        TimeDrivenParallelism parallelism = new TimeDrivenParallelism(2);
+        checkTestSplitsInclusions(parallelism, 5, TestCaseCentricFormat.CLNAME_DOT_TCNAME);
+    }
+    
+    private void checkTestSplitsInclusions(Parallelism parallelism, int expectedSplitSize, TestCaseCentricFormat caseCentricFormat) throws Exception {
         TestResult testResult = new TestResult(0L, scanner, false);
         testResult.tally();
         when(action.getResult()).thenReturn(testResult);
 
-        CountDrivenParallelism parallelism = new CountDrivenParallelism(5);
-        List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, build, listener, true);
-        assertEquals(5, splits.size());
+        List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, build, listener, true, caseCentricFormat);
+        assertEquals(expectedSplitSize, splits.size());
         List<String> exclusions = new ArrayList<>(splits.get(0).getList());
         List<String> inclusions = new ArrayList<>();
         for (int i = 0; i < splits.size(); i++) {

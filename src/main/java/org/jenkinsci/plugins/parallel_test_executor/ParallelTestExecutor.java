@@ -11,6 +11,7 @@ import hudson.model.*;
 import hudson.plugins.parameterizedtrigger.*;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
+import hudson.tasks.junit.CaseResult;
 import hudson.tasks.junit.ClassResult;
 import hudson.tasks.junit.JUnitResultArchiver;
 import hudson.tasks.test.AbstractTestResultAction;
@@ -45,6 +46,7 @@ public class ParallelTestExecutor extends Builder {
     private String testReportFiles;
     private boolean doNotArchiveTestResults = false;
     private List<AbstractBuildParameters> parameters;
+    private TestCaseCentricFormat caseCentricFormat;
 
     @DataBoundConstructor
     public ParallelTestExecutor(Parallelism parallelism, String testJob, String patternFile, String testReportFiles, boolean archiveTestResults, List<AbstractBuildParameters> parameters) {
@@ -85,22 +87,35 @@ public class ParallelTestExecutor extends Builder {
     public boolean isArchiveTestResults() {
         return !doNotArchiveTestResults;
     }
+    
+    public TestCaseCentricFormat getCaseCentricFormat() {
+        if (caseCentricFormat == null) {
+            return TestCaseCentricFormat.DISABLED;
+        } else {
+            return caseCentricFormat;
+        }
+    }
+    
+    @DataBoundSetter
+    public void setCaseCentricFormat(TestCaseCentricFormat format) {
+        this.caseCentricFormat = format;
+    }
 
     public List<AbstractBuildParameters> getParameters() {
         return parameters;
     }
 
     /**
-     * {@link org.jenkinsci.plugins.parallel_test_executor.TestClass}es are divided into multiple sets of roughly equal size.
+     * {@link org.jenkinsci.plugins.parallel_test_executor.TestEntity}es are divided into multiple sets of roughly equal size.
      */
     @SuppressFBWarnings(value="EQ_COMPARETO_USE_OBJECT_EQUALS", justification="We wish to consider knapsacks as distinct items, just sort by size.")
     static class Knapsack implements Comparable<Knapsack> {
         /**
-         * Total duration of all {@link org.jenkinsci.plugins.parallel_test_executor.TestClass}es that are in this knapsack.
+         * Total duration of all {@link org.jenkinsci.plugins.parallel_test_executor.TestEntity}es that are in this knapsack.
          */
         long total;
 
-        void add(TestClass tc) {
+        void add(TestEntity tc) {
             assert tc.knapsack == null;
             tc.knapsack = this;
             total += tc.duration;
@@ -122,7 +137,7 @@ public class ParallelTestExecutor extends Builder {
         }
         FilePath dir = workspace.child("test-splits");
         dir.deleteRecursive();
-        List<InclusionExclusionPattern> splits = findTestSplits(parallelism, build, listener, includesPatternFile != null);
+        List<InclusionExclusionPattern> splits = findTestSplits(parallelism, build, listener, includesPatternFile != null, getCaseCentricFormat());
         for (int i = 0; i < splits.size(); i++) {
             InclusionExclusionPattern pattern = splits.get(i);
             try (OutputStream os = dir.child("split." + i + "." + (pattern.isIncludes() ? "include" : "exclude") + ".txt").write();
@@ -143,20 +158,22 @@ public class ParallelTestExecutor extends Builder {
         return true;
     }
 
-    static List<InclusionExclusionPattern> findTestSplits(Parallelism parallelism, Run<?,?> build, TaskListener listener, boolean generateInclusions) {
+    static List<InclusionExclusionPattern> findTestSplits(Parallelism parallelism, Run<?,?> build, TaskListener listener, boolean generateInclusions, TestCaseCentricFormat caseCentricFormat) {
         TestResult tr = findPreviousTestResult(build, listener);
         if (tr == null) {
             listener.getLogger().println("No record available, so executing everything in one place");
             return Collections.singletonList(new InclusionExclusionPattern(Collections.<String>emptyList(), false));
         } else {
-
-            Map<String/*fully qualified class name*/, TestClass> data = new TreeMap<>();
-            collect(tr, data);
+            
+            boolean isCaseCentric = TestCaseCentricFormat.isEnabled(caseCentricFormat);
+            
+            Map<String/*fully qualified class/case name*/, TestEntity> data = new TreeMap<>();
+            collect(tr, data, caseCentricFormat);
 
             // sort in the descending order of the duration
-            List<TestClass> sorted = new ArrayList<>(data.values());
+            List<TestEntity> sorted = new ArrayList<TestEntity>(data.values());
             Collections.sort(sorted);
-
+            
             // degree of the parallelism. we need minimum 1
             final int n = Math.max(1, parallelism.calculate(sorted));
 
@@ -170,7 +187,7 @@ public class ParallelTestExecutor extends Builder {
                 and the result should be of roughly equal size
              */
             PriorityQueue<Knapsack> q = new PriorityQueue<>(knapsacks);
-            for (TestClass d : sorted) {
+            for (TestEntity d : sorted) {
                 Knapsack k = q.poll();
                 k.add(d);
                 q.add(k);
@@ -189,8 +206,8 @@ public class ParallelTestExecutor extends Builder {
             }
             variance /= n;
             long stddev = (long) Math.sqrt(variance);
-            listener.getLogger().printf("%d test classes (%dms) divided into %d sets. Min=%dms, Average=%dms, Max=%dms, stddev=%dms%n",
-                    data.size(), total, n, min, average, max, stddev);
+            listener.getLogger().printf("%d test %s (%dms) divided into %d sets. Min=%dms, Average=%dms, Max=%dms, stddev=%dms%n",
+                    data.size(), isCaseCentric ? "cases" : "classes", total, n, min, average, max, stddev);
 
             List<InclusionExclusionPattern> r = new ArrayList<>();
             for (int i = 0; i < n; i++) {
@@ -198,10 +215,14 @@ public class ParallelTestExecutor extends Builder {
                 boolean shouldIncludeElements = generateInclusions && i != 0;
                 List<String> elements = new ArrayList<>();
                 r.add(new InclusionExclusionPattern(elements, shouldIncludeElements));
-                for (TestClass d : sorted) {
+                for (TestEntity d : sorted) {
                     if (shouldIncludeElements == (d.knapsack == k)) {
-                        elements.add(d.getSourceFileName(".java"));
-                        elements.add(d.getSourceFileName(".class"));
+                        if (!isCaseCentric) {
+                            elements.add(d.getOutputString(".java"));
+                            elements.add(d.getOutputString(".class"));
+                        } else {
+                            elements.add(d.getOutputString(""));
+                        }
                     }
                 }
             }
@@ -263,17 +284,24 @@ public class ParallelTestExecutor extends Builder {
     /**
      * Recursive visits the structure inside {@link hudson.tasks.test.TestResult}.
      */
-    static private void collect(TestResult r, Map<String, TestClass> data) {
+    static private void collect(TestResult r, Map<String, TestEntity> data, TestCaseCentricFormat caseCentricFormat) {
         if (r instanceof ClassResult) {
-            ClassResult cr = (ClassResult) r;
-            TestClass dp = new TestClass(cr);
-            data.put(dp.className, dp);
+            ClassResult classResult = (ClassResult) r;
+            if(!TestCaseCentricFormat.isEnabled(caseCentricFormat)) {
+                TestClass dp = new TestClass(classResult);
+                data.put(dp.className, dp);
+            } else {
+                for(CaseResult caseResult : classResult.getChildren()) {
+                    TestCase dp = new TestCase(caseResult, caseCentricFormat);
+                    data.put(dp.output, dp);
+                }
+            }
             return; // no need to go deeper
         }
         if (r instanceof TabulatedResult) {
             TabulatedResult tr = (TabulatedResult) r;
             for (TestResult child : tr.getChildren()) {
-                collect(child, data);
+                collect(child, data, caseCentricFormat);
             }
         }
     }

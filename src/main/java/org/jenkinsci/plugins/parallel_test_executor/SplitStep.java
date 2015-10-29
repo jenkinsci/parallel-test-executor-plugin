@@ -23,6 +23,7 @@ public final class SplitStep extends AbstractStepImpl {
     private final Parallelism parallelism;
 
     private boolean generateInclusions;
+    private TestCaseCentricFormat caseCentricFormat;
 
     @DataBoundConstructor public SplitStep(Parallelism parallelism) {
         this.parallelism = parallelism;
@@ -37,6 +38,19 @@ public final class SplitStep extends AbstractStepImpl {
     @DataBoundSetter
     public void setGenerateInclusions(boolean generateInclusions) {
         this.generateInclusions = generateInclusions;
+    }
+    
+    public TestCaseCentricFormat getCaseCentricFormat() {
+        if (caseCentricFormat == null) {
+            return TestCaseCentricFormat.DISABLED;
+        } else {
+            return caseCentricFormat;
+        }
+    }
+    
+    @DataBoundSetter
+    public void setCaseCentricFormat(TestCaseCentricFormat format) {
+        this.caseCentricFormat = format;
     }
 
     @Extension public static final class DescriptorImpl extends AbstractStepDescriptorImpl {
@@ -65,10 +79,10 @@ public final class SplitStep extends AbstractStepImpl {
 
         @Override protected List<?> run() throws Exception {
             if (step.generateInclusions) {
-                return ParallelTestExecutor.findTestSplits(step.parallelism, build, listener, step.generateInclusions);
+                return ParallelTestExecutor.findTestSplits(step.parallelism, build, listener, step.generateInclusions, step.caseCentricFormat);
             } else {
                 List<List<String>> result = new ArrayList<>();
-                for (InclusionExclusionPattern pattern : ParallelTestExecutor.findTestSplits(step.parallelism, build, listener, step.generateInclusions)) {
+                for (InclusionExclusionPattern pattern : ParallelTestExecutor.findTestSplits(step.parallelism, build, listener, step.generateInclusions, step.caseCentricFormat)) {
                     result.add(pattern.getList());
                 }
                 return result;

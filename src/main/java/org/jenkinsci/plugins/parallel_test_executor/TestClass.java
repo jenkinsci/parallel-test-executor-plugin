@@ -1,20 +1,12 @@
 package org.jenkinsci.plugins.parallel_test_executor;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.tasks.junit.ClassResult;
-import org.jenkinsci.plugins.parallel_test_executor.ParallelTestExecutor.Knapsack;
 
 /**
- * Execution time of a specific test case.
+ * Execution time of a specific test class.
  */
-@SuppressFBWarnings(value="EQ_COMPARETO_USE_OBJECT_EQUALS", justification="Cf. justification in Knapsack.")
-public class TestClass implements Comparable<TestClass> {
+public class TestClass extends TestEntity {
     String className;
-    long duration;
-    /**
-     * Knapsack that this test class belongs to.
-     */
-    Knapsack knapsack;
 
     public TestClass(ClassResult cr) {
         String pkgName = cr.getParent().getName();
@@ -26,15 +18,13 @@ public class TestClass implements Comparable<TestClass> {
         this.duration = (long)(cr.getDuration()*1000);  // milliseconds is a good enough precision for us
     }
 
-    public int compareTo(TestClass that) {
-        long l = this.duration - that.duration;
-        // sort them in the descending order
-        if (l>0)    return -1;
-        if (l<0)    return 1;
-        return 0;
+    @Override
+    public String getOutputString(String extension) {
+        return className.replace('.','/')+extension;
     }
 
-    public String getSourceFileName(String extension) {
-        return className.replace('.','/')+extension;
+    @Override
+    public String toString() {
+        return className +".extension";
     }
 }

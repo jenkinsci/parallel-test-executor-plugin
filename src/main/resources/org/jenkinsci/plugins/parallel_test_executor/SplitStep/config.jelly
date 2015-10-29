@@ -7,4 +7,9 @@
     <f:entry field="generateInclusions">
         <f:checkbox title="Generate inclusion patterns"/>
     </f:entry>
+    <f:entry title="Test case centric output" field="caseCentricFormat">
+        <f:enum>
+            ${it.description}
+        </f:enum>
+    </f:entry>
 </j:jelly>

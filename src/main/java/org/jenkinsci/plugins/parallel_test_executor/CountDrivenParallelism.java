@@ -19,7 +19,7 @@ public class CountDrivenParallelism extends Parallelism {
     }
 
     @Override
-    public int calculate(List<TestClass> tests) {
+    public int calculate(List<TestEntity> tests) {
         return size;
     }
 
