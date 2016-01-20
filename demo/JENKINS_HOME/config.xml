@@ -2,7 +2,7 @@
 <hudson>
   <disabledAdministrativeMonitors/>
   <version>1.0</version>
-  <numExecutors>2</numExecutors>
+  <numExecutors>0</numExecutors>
   <mode>NORMAL</mode>
   <useSecurity>true</useSecurity>
   <authorizationStrategy class="hudson.security.AuthorizationStrategy$Unsecured"/>
@@ -14,8 +14,15 @@
   <jdks/>
   <viewsTabBar class="hudson.views.DefaultViewsTabBar"/>
   <myViewsTabBar class="hudson.views.DefaultMyViewsTabBar"/>
-  <clouds/>
-  <slaves/>
+  <clouds>
+    <org.jenkinci.plugins.mock__slave.MockCloud>
+      <name>mock</name>
+      <mode>NORMAL</mode>
+      <numExecutors>1</numExecutors>
+      <labelString></labelString>
+    </org.jenkinci.plugins.mock__slave.MockCloud>
+  </clouds>
+   <slaves/>
   <scmCheckoutRetryCount>0</scmCheckoutRetryCount>
   <views>
     <hudson.model.AllView>
