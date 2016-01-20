@@ -51,7 +51,7 @@
   <viewsTabBar class="hudson.views.DefaultViewsTabBar"/>
   <primaryView>All</primaryView>
   <triggers>
-    <com.cloudbees.hudson.plugins.folder.computed.PeriodicFolderTrigger plugin="cloudbees-folder@5.1-beta-2">
+    <com.cloudbees.hudson.plugins.folder.computed.PeriodicFolderTrigger>
       <spec>* * * * *</spec>
       <interval>60000</interval>
     </com.cloudbees.hudson.plugins.folder.computed.PeriodicFolderTrigger>
