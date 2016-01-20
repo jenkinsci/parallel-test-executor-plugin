@@ -85,7 +85,7 @@ public class ParallelTestExecutorUnitTest {
         List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, build, listener, false);
         assertEquals(5, splits.size());
         for (InclusionExclusionPattern split : splits) {
-            assertFalse(split.isIncludes());
+            assertFalse(split.getIncludes());
         }
     }
 
@@ -102,8 +102,8 @@ public class ParallelTestExecutorUnitTest {
         List<String> inclusions = new ArrayList<String>();
         for (int i = 0; i < splits.size(); i++) {
             InclusionExclusionPattern split = splits.get(i);
-            assertEquals(i != 0, split.isIncludes());
-            if (split.isIncludes()) {
+            assertEquals(i != 0, split.getIncludes());
+            if (split.getIncludes()) {
                 inclusions.addAll(split.getList());
             }
         }
