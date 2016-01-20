@@ -16,6 +16,9 @@ public class Hello${i}Test {
     @Test public void three() throws Exception {
         Thread.sleep(${i##0}0);
     }
+    @Test public void four() throws Exception {
+        Thread.sleep(1000);
+    }
 }
 EOF
 done
