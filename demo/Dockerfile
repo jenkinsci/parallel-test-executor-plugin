@@ -15,7 +15,7 @@ RUN git init --bare repo && cd repo-wc && git init && git add . && git -c user.e
 
 # Prepare local Maven repo. Note that $JENKINS_HOME is a volume so we cannot populate it now.
 RUN echo '<settings><mirrors><mirror><id>central</id><url>http://repo.jenkins-ci.org/simple/repo1-cache/</url><mirrorOf>central</mirrorOf></mirror></mirrors><localRepository>/usr/share/jenkins/ref/.m2/repository</localRepository></settings>' > settings.xml
-RUN cd repo-wc && mvn -s /tmp/settings.xml -Dmaven.test.failure.ignore clean install
+RUN cd repo-wc && mvn -s /tmp/settings.xml -Dmaven.test.failure.ignore -Dtest=Hello17Test clean install
 
 COPY plugins.txt /tmp/
 RUN /usr/local/bin/plugins.sh /tmp/plugins.txt
