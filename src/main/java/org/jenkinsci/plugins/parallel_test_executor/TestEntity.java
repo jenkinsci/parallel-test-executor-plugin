@@ -1,6 +1,7 @@
 package org.jenkinsci.plugins.parallel_test_executor;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import java.util.List;
 import org.jenkinsci.plugins.parallel_test_executor.ParallelTestExecutor.Knapsack;
 
 /**
@@ -25,5 +26,5 @@ public abstract class TestEntity implements Comparable<TestEntity> {
         return 0;
     }
     
-    public abstract String getOutputString(String extension);
+    public abstract List<String> getOutputString();
 }

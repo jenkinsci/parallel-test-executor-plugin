@@ -1,6 +1,8 @@
 package org.jenkinsci.plugins.parallel_test_executor;
 
 import hudson.tasks.junit.ClassResult;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Execution time of a specific test class.
@@ -19,8 +21,11 @@ public class TestClass extends TestEntity {
     }
 
     @Override
-    public String getOutputString(String extension) {
-        return className.replace('.','/')+extension;
+    public List<String> getOutputString() {
+        ArrayList<String> output = new ArrayList<String>(2);
+        output.add(className.replace('.','/')+".java");
+        output.add(className.replace('.','/')+".class");
+        return output;
     }
 
     @Override

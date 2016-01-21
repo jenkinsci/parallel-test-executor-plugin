@@ -23,7 +23,7 @@ public final class SplitStep extends AbstractStepImpl {
     private final Parallelism parallelism;
 
     private boolean generateInclusions;
-    private TestCaseCentricFormat caseCentricFormat;
+    private TestMode testMode;
 
     @DataBoundConstructor public SplitStep(Parallelism parallelism) {
         this.parallelism = parallelism;
@@ -40,17 +40,17 @@ public final class SplitStep extends AbstractStepImpl {
         this.generateInclusions = generateInclusions;
     }
     
-    public TestCaseCentricFormat getCaseCentricFormat() {
-        if (caseCentricFormat == null) {
-            return TestCaseCentricFormat.DISABLED;
+    public TestMode getTestMode() {
+        if (testMode == null) {
+            return TestMode.JAVA;
         } else {
-            return caseCentricFormat;
+            return testMode;
         }
     }
     
     @DataBoundSetter
-    public void setCaseCentricFormat(TestCaseCentricFormat format) {
-        this.caseCentricFormat = format;
+    public void setTestMode(TestMode testMode) {
+        this.testMode = testMode;
     }
 
     @Extension public static final class DescriptorImpl extends AbstractStepDescriptorImpl {
@@ -79,10 +79,10 @@ public final class SplitStep extends AbstractStepImpl {
 
         @Override protected List<?> run() throws Exception {
             if (step.generateInclusions) {
-                return ParallelTestExecutor.findTestSplits(step.parallelism, build, listener, step.generateInclusions, step.caseCentricFormat);
+                return ParallelTestExecutor.findTestSplits(step.parallelism, build, listener, step.generateInclusions, step.getTestMode());
             } else {
                 List<List<String>> result = new ArrayList<>();
-                for (InclusionExclusionPattern pattern : ParallelTestExecutor.findTestSplits(step.parallelism, build, listener, step.generateInclusions, step.caseCentricFormat)) {
+                for (InclusionExclusionPattern pattern : ParallelTestExecutor.findTestSplits(step.parallelism, build, listener, step.generateInclusions, step.getTestMode())) {
                     result.add(pattern.getList());
                 }
                 return result;

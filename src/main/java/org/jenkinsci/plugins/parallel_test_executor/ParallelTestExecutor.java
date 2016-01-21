@@ -46,7 +46,7 @@ public class ParallelTestExecutor extends Builder {
     private String testReportFiles;
     private boolean doNotArchiveTestResults = false;
     private List<AbstractBuildParameters> parameters;
-    private TestCaseCentricFormat caseCentricFormat;
+    private TestMode testMode;
 
     @DataBoundConstructor
     public ParallelTestExecutor(Parallelism parallelism, String testJob, String patternFile, String testReportFiles, boolean archiveTestResults, List<AbstractBuildParameters> parameters) {
@@ -88,17 +88,17 @@ public class ParallelTestExecutor extends Builder {
         return !doNotArchiveTestResults;
     }
     
-    public TestCaseCentricFormat getCaseCentricFormat() {
-        if (caseCentricFormat == null) {
-            return TestCaseCentricFormat.DISABLED;
+    public TestMode getTestMode() {
+        if (testMode == null) {
+            return TestMode.JAVA;
         } else {
-            return caseCentricFormat;
+            return testMode;
         }
     }
     
     @DataBoundSetter
-    public void setCaseCentricFormat(TestCaseCentricFormat format) {
-        this.caseCentricFormat = format;
+    public void setTestMode(TestMode testMode) {
+        this.testMode = testMode;
     }
 
     public List<AbstractBuildParameters> getParameters() {
@@ -137,7 +137,7 @@ public class ParallelTestExecutor extends Builder {
         }
         FilePath dir = workspace.child("test-splits");
         dir.deleteRecursive();
-        List<InclusionExclusionPattern> splits = findTestSplits(parallelism, build, listener, includesPatternFile != null, getCaseCentricFormat());
+        List<InclusionExclusionPattern> splits = findTestSplits(parallelism, build, listener, includesPatternFile != null, getTestMode());
         for (int i = 0; i < splits.size(); i++) {
             InclusionExclusionPattern pattern = splits.get(i);
             try (OutputStream os = dir.child("split." + i + "." + (pattern.isIncludes() ? "include" : "exclude") + ".txt").write();
@@ -158,17 +158,14 @@ public class ParallelTestExecutor extends Builder {
         return true;
     }
 
-    static List<InclusionExclusionPattern> findTestSplits(Parallelism parallelism, Run<?,?> build, TaskListener listener, boolean generateInclusions, TestCaseCentricFormat caseCentricFormat) {
+    static List<InclusionExclusionPattern> findTestSplits(Parallelism parallelism, Run<?,?> build, TaskListener listener, boolean generateInclusions, TestMode testMode) {
         TestResult tr = findPreviousTestResult(build, listener);
         if (tr == null) {
             listener.getLogger().println("No record available, so executing everything in one place");
             return Collections.singletonList(new InclusionExclusionPattern(Collections.<String>emptyList(), false));
         } else {
-            
-            boolean isCaseCentric = TestCaseCentricFormat.isEnabled(caseCentricFormat);
-            
             Map<String/*fully qualified class/case name*/, TestEntity> data = new TreeMap<>();
-            collect(tr, data, caseCentricFormat);
+            collect(tr, data, testMode);
 
             // sort in the descending order of the duration
             List<TestEntity> sorted = new ArrayList<TestEntity>(data.values());
@@ -207,7 +204,7 @@ public class ParallelTestExecutor extends Builder {
             variance /= n;
             long stddev = (long) Math.sqrt(variance);
             listener.getLogger().printf("%d test %s (%dms) divided into %d sets. Min=%dms, Average=%dms, Max=%dms, stddev=%dms%n",
-                    data.size(), isCaseCentric ? "cases" : "classes", total, n, min, average, max, stddev);
+                    data.size(), testMode == TestMode.JAVA ? "classes" : "cases", total, n, min, average, max, stddev);
 
             List<InclusionExclusionPattern> r = new ArrayList<>();
             for (int i = 0; i < n; i++) {
@@ -217,12 +214,7 @@ public class ParallelTestExecutor extends Builder {
                 r.add(new InclusionExclusionPattern(elements, shouldIncludeElements));
                 for (TestEntity d : sorted) {
                     if (shouldIncludeElements == (d.knapsack == k)) {
-                        if (!isCaseCentric) {
-                            elements.add(d.getOutputString(".java"));
-                            elements.add(d.getOutputString(".class"));
-                        } else {
-                            elements.add(d.getOutputString(""));
-                        }
+                        elements.addAll(d.getOutputString());
                     }
                 }
             }
@@ -284,15 +276,15 @@ public class ParallelTestExecutor extends Builder {
     /**
      * Recursive visits the structure inside {@link hudson.tasks.test.TestResult}.
      */
-    static private void collect(TestResult r, Map<String, TestEntity> data, TestCaseCentricFormat caseCentricFormat) {
+    static private void collect(TestResult r, Map<String, TestEntity> data, TestMode testMode) {
         if (r instanceof ClassResult) {
             ClassResult classResult = (ClassResult) r;
-            if(!TestCaseCentricFormat.isEnabled(caseCentricFormat)) {
+            if(testMode == TestMode.JAVA) {
                 TestClass dp = new TestClass(classResult);
                 data.put(dp.className, dp);
             } else {
                 for(CaseResult caseResult : classResult.getChildren()) {
-                    TestCase dp = new TestCase(caseResult, caseCentricFormat);
+                    TestCase dp = new TestCase(caseResult, testMode == TestMode.CLASSANDTESTCASENAME);
                     data.put(dp.output, dp);
                 }
             }
@@ -301,7 +293,7 @@ public class ParallelTestExecutor extends Builder {
         if (r instanceof TabulatedResult) {
             TabulatedResult tr = (TabulatedResult) r;
             for (TestResult child : tr.getChildren()) {
-                collect(child, data, caseCentricFormat);
+                collect(child, data, testMode);
             }
         }
     }
