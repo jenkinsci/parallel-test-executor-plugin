@@ -118,7 +118,7 @@ public class ParallelTestExecutor extends Builder {
         List<InclusionExclusionPattern> splits = findTestSplits(parallelism, build, listener, includesPatternFile != null);
         for (int i = 0; i < splits.size(); i++) {
             InclusionExclusionPattern pattern = splits.get(i);
-            OutputStream os = dir.child("split." + i + "." + (pattern.getIncludes() ? "include" : "exclude") + ".txt").write();
+            OutputStream os = dir.child("split." + i + "." + (pattern.isIncludes() ? "include" : "exclude") + ".txt").write();
             try {
                 PrintWriter pw = new PrintWriter(new OutputStreamWriter(os, Charsets.UTF_8));
                 for (String filePattern : pattern.getList()) {

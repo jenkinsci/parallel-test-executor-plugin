@@ -11,7 +11,7 @@ import java.util.List;
  */
 public class InclusionExclusionPattern implements Serializable {
     @Whitelisted
-    public boolean getIncludes() {
+    public boolean isIncludes() {
         return includes;
     }
 
