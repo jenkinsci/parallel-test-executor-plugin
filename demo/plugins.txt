@@ -8,10 +8,10 @@ git-client:1.19.1
 jquery-detached:1.1.1
 junit:1.10
 mock-slave:1.8
-parallel-test-executor:1.7
+parallel-test-executor:1.8
 parameterized-trigger:2.18
 scm-api:1.0
-script-security:1.16
+script-security:1.17
 workflow-api:1.13
 workflow-basic-steps:1.13
 workflow-cps:1.13

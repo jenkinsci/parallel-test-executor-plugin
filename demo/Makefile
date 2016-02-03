@@ -1,4 +1,4 @@
-TAG=1.7
+TAG=1.8
 IMAGE=jenkinsci/parallel-test-executor-demo
 DOCKER_RUN=docker run --rm -p 8080:8080 -ti
 

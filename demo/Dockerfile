@@ -17,6 +17,7 @@ RUN git init --bare repo && cd repo-wc && git init && git add . && git -c user.e
 RUN echo '<settings><mirrors><mirror><id>central</id><url>http://repo.jenkins-ci.org/simple/repo1-cache/</url><mirrorOf>central</mirrorOf></mirror></mirrors><localRepository>/usr/share/jenkins/ref/.m2/repository</localRepository></settings>' > settings.xml
 RUN cd repo-wc && mvn -s /tmp/settings.xml -Dmaven.test.failure.ignore -Dtest=Hello17Test clean install
 
+ENV JENKINS_UC http://jenkins-updates.cloudbees.com
 COPY plugins.txt /tmp/
 RUN /usr/local/bin/plugins.sh /tmp/plugins.txt
 

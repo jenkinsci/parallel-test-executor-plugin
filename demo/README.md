@@ -4,7 +4,7 @@
 
 or to use the uploaded demo:
 
-    docker run -p 8080:8080 -ti jenkinsci/parallel-test-executor-demo
+    docker run --rm -p 8080:8080 -ti jenkinsci/parallel-test-executor-demo
 
 and then go to: http://localhost:8080/
 
@@ -14,5 +14,5 @@ and then go to: http://localhost:8080/
 
 `pipeline` is a self-contained Pipeline project.
 
-Run one build of `main` or `pipeline`—all 400 tests will be run on one slave, which is slow.
+Run one build of `main` or `pipeline » master`—all 400 tests will be run on one slave, which is slow.
 Run a second build and you will see the load split across five slaves running 80 tests apiece.
