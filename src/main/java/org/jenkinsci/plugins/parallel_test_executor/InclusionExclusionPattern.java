@@ -23,7 +23,7 @@ public class InclusionExclusionPattern implements Serializable {
     private final boolean includes;
     private final List<String> list;
 
-    public InclusionExclusionPattern(List<String> list, boolean includes) {
+    InclusionExclusionPattern(List<String> list, boolean includes) {
         this.list = list;
         this.includes = includes;
     }

@@ -12,7 +12,7 @@
   <triggers/>
   <concurrentBuild>false</concurrentBuild>
   <builders>
-    <org.jenkinsci.plugins.parallel__test__executor.ParallelTestExecutor plugin="parallel-test-executor@1.5-SNAPSHOT">
+    <org.jenkinsci.plugins.parallel__test__executor.ParallelTestExecutor>
       <parallelism class="org.jenkinsci.plugins.parallel_test_executor.CountDrivenParallelism">
         <size>5</size>
       </parallelism>

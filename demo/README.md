@@ -8,12 +8,11 @@ or to use the uploaded demo:
 
 and then go to: http://localhost:8080/
 
-Click on _Credentials_ and enter a CloudBees DEV@cloud user account email and password.
-
 # Demo contents
 
 `main` is a freestyle project using the parallel test builder on `sub`.
 
-`flow` is a self-contained workflow project.
+`pipeline` is a self-contained Pipeline project.
 
-[parallel-test-executor-plugin-sample](https://github.com/jenkinsci/parallel-test-executor-plugin-sample/) is the demo project.
+Run one build of `main` or `pipeline`—all 400 tests will be run on one slave, which is slow.
+Run a second build and you will see the load split across five slaves running 80 tests apiece.

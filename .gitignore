@@ -19,5 +19,4 @@ build
 # vim
 *~
 
-demo/jenkins-war.war
-demo/JENKINS_HOME/plugins/
+demo/snapshot/parallel-test-executor.jpi

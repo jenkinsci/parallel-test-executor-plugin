@@ -146,7 +146,7 @@ public class ParallelTestExecutor extends Builder {
             return Collections.singletonList(new InclusionExclusionPattern(Collections.<String>emptyList(), false));
         } else {
 
-            Map<String/*fully qualified class name*/, TestClass> data = new HashMap<String, TestClass>();
+            Map<String/*fully qualified class name*/, TestClass> data = new TreeMap<String, TestClass>();
             collect(tr, data);
 
             // sort in the descending order of the duration

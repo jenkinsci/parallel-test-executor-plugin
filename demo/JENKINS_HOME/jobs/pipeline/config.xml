@@ -1,0 +1,59 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject>
+  <actions/>
+  <description></description>
+  <sources>
+    <jenkins.branch.BranchSource>
+      <source class="jenkins.plugins.git.GitSCMSource">
+        <remote>/tmp/repo</remote>
+        <credentialsId></credentialsId>
+        <includes>*</includes>
+        <excludes></excludes>
+        <ignoreOnPushNotifications>false</ignoreOnPushNotifications>
+      </source>
+      <strategy class="jenkins.branch.DefaultBranchPropertyStrategy">
+        <properties class="empty-list"/>
+      </strategy>
+    </jenkins.branch.BranchSource>
+  </sources>
+  <deadBranchStrategy class="jenkins.branch.DefaultDeadBranchStrategy">
+    <pruneDeadBranches>true</pruneDeadBranches>
+    <daysToKeep>-1</daysToKeep>
+    <numToKeep>1</numToKeep>
+  </deadBranchStrategy>
+  <factory class="org.jenkinsci.plugins.workflow.multibranch.WorkflowBranchProjectFactory">
+    <owner class="org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject" reference="../.."/>
+  </factory>
+  <views>
+    <hudson.model.ListView>
+      <owner class="org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject" reference="../../.."/>
+      <name>All</name>
+      <filterExecutors>false</filterExecutors>
+      <filterQueue>false</filterQueue>
+      <properties class="hudson.model.View$PropertyList"/>
+      <jobNames>
+        <comparator class="hudson.util.CaseInsensitiveComparator"/>
+      </jobNames>
+      <jobFilters/>
+      <columns>
+        <hudson.views.StatusColumn/>
+        <hudson.views.WeatherColumn/>
+        <hudson.views.JobColumn/>
+        <hudson.views.LastSuccessColumn/>
+        <hudson.views.LastFailureColumn/>
+        <hudson.views.LastDurationColumn/>
+        <hudson.views.BuildButtonColumn/>
+      </columns>
+      <includeRegex>.*</includeRegex>
+      <recurse>false</recurse>
+    </hudson.model.ListView>
+  </views>
+  <viewsTabBar class="hudson.views.DefaultViewsTabBar"/>
+  <primaryView>All</primaryView>
+  <triggers>
+    <com.cloudbees.hudson.plugins.folder.computed.PeriodicFolderTrigger>
+      <spec>* * * * *</spec>
+      <interval>60000</interval>
+    </com.cloudbees.hudson.plugins.folder.computed.PeriodicFolderTrigger>
+  </triggers>
+</org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject>
