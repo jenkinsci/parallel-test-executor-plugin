@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 
 /**
  * Essentially a copy-paste of {@link hudson.plugins.parameterizedtrigger.BinaryFileParameterFactory} that takes a
- * list of mappings "name -> filePattern" to generate parameters.
+ * list of mappings {@code name -> filePattern} to generate parameters.
  */
 public class MultipleBinaryFileParameterFactory extends AbstractBuildParameterFactory {
     public static class ParameterBinding {
