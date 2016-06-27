@@ -26,12 +26,23 @@ public final class SplitStep extends AbstractStepImpl {
 
     private boolean generateInclusions;
 
+    private String alternateJob;
+
     @DataBoundConstructor public SplitStep(Parallelism parallelism) {
         this.parallelism = parallelism;
     }
 
     public Parallelism getParallelism() {
         return parallelism;
+    }
+
+    public String getAlternateJob() {
+        return alternateJob;
+    }
+
+    @DataBoundSetter
+    public void setAlternateJob(String alternateJob) {
+        this.alternateJob = alternateJob;
     }
 
     public boolean isGenerateInclusions() { return generateInclusions; }
@@ -65,10 +76,12 @@ public final class SplitStep extends AbstractStepImpl {
 
         @Override protected List<?> run() throws Exception {
             if (step.generateInclusions) {
-                return ParallelTestExecutor.findTestSplits(step.parallelism, build, listener, step.generateInclusions);
+                return ParallelTestExecutor.findTestSplits(step.parallelism, build, listener, step.generateInclusions,
+                        step.alternateJob);
             } else {
                 List<List<String>> result = new ArrayList<List<String>>();
-                for (InclusionExclusionPattern pattern : ParallelTestExecutor.findTestSplits(step.parallelism, build, listener, step.generateInclusions)) {
+                for (InclusionExclusionPattern pattern : ParallelTestExecutor.findTestSplits(step.parallelism, build,
+                        listener, step.generateInclusions, step.alternateJob)) {
                     result.add(pattern.getList());
                 }
                 return result;

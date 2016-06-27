@@ -68,7 +68,8 @@ public class MultipleBinaryFileParameterFactory extends AbstractBuildParameterFa
                         result.add(new AbstractBuildParameters() {
                             @Override
                             public Action getAction(AbstractBuild<?, ?> build, TaskListener listener) throws IOException, InterruptedException, DontTriggerException {
-                                assert f.getChannel() == null;    // we copied files locally. This file must be local to the master
+                                // NOTE: This used to check if f.getChannel() is null, but that has never actually returned null.
+                                assert !f.isRemote();    // we copied files locally. This file must be local to the master
                                 FileParameterValue fv = new FileParameterValue(parameterBinding.parameterName, new File(f.getRemote()), f.getName());
                                 return new ParametersAction(fv);
                             }

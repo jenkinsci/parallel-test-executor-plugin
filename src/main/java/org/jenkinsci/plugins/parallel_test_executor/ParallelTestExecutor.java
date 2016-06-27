@@ -14,6 +14,7 @@ import hudson.tasks.junit.JUnitResultArchiver;
 import hudson.tasks.test.AbstractTestResultAction;
 import hudson.tasks.test.TabulatedResult;
 import hudson.tasks.test.TestResult;
+import jenkins.model.Jenkins;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -43,6 +44,7 @@ public class ParallelTestExecutor extends Builder {
     private String testReportFiles;
     private boolean doNotArchiveTestResults = false;
     private List<AbstractBuildParameters> parameters;
+    private String alternateJob;
 
     @DataBoundConstructor
     public ParallelTestExecutor(Parallelism parallelism, String testJob, String patternFile, String testReportFiles, boolean archiveTestResults, List<AbstractBuildParameters> parameters) {
@@ -74,6 +76,16 @@ public class ParallelTestExecutor extends Builder {
     @DataBoundSetter
     public void setIncludesPatternFile(String includesPatternFile) {
         this.includesPatternFile = Util.fixEmpty(includesPatternFile);
+    }
+
+    @CheckForNull
+    public String getAlternateJob() {
+        return alternateJob;
+    }
+
+    @DataBoundSetter
+    public void setAlternateJob(String alternateJob) {
+        this.alternateJob = Util.fixEmpty(alternateJob);
     }
 
     public String getTestReportFiles() {
@@ -115,7 +127,8 @@ public class ParallelTestExecutor extends Builder {
     public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
         FilePath dir = build.getWorkspace().child("test-splits");
         dir.deleteRecursive();
-        List<InclusionExclusionPattern> splits = findTestSplits(parallelism, build, listener, includesPatternFile != null);
+        List<InclusionExclusionPattern> splits = findTestSplits(parallelism, build, listener, includesPatternFile != null,
+                alternateJob);
         for (int i = 0; i < splits.size(); i++) {
             InclusionExclusionPattern pattern = splits.get(i);
             OutputStream os = dir.child("split." + i + "." + (pattern.isIncludes() ? "include" : "exclude") + ".txt").write();
@@ -139,8 +152,14 @@ public class ParallelTestExecutor extends Builder {
         return true;
     }
 
-    static List<InclusionExclusionPattern> findTestSplits(Parallelism parallelism, Run<?,?> build, TaskListener listener, boolean generateInclusions) {
-        TestResult tr = findPreviousTestResult(build, listener);
+    static List<InclusionExclusionPattern> findTestSplits(Parallelism parallelism, Run<?,?> build, TaskListener listener,
+                                                          boolean generateInclusions) {
+        return findTestSplits(parallelism, build, listener, generateInclusions, null);
+    }
+
+    static List<InclusionExclusionPattern> findTestSplits(Parallelism parallelism, Run<?,?> build, TaskListener listener,
+                                                          boolean generateInclusions, String alternateJob) {
+        TestResult tr = findPreviousTestResult(build, listener, alternateJob);
         if (tr == null) {
             listener.getLogger().println("No record available, so executing everything in one place");
             return Collections.singletonList(new InclusionExclusionPattern(Collections.<String>emptyList(), false));
@@ -274,7 +293,27 @@ public class ParallelTestExecutor extends Builder {
         }
     }
 
-    private static TestResult findPreviousTestResult(Run<?, ?> b, TaskListener listener) {
+    private static TestResult findPreviousTestResult(Run<?, ?> originalBuild, TaskListener listener, String alternateJob) {
+        Run<?,?> b = originalBuild;
+        if (alternateJob != null && !alternateJob.equals("")) {
+            TopLevelItem item = Jenkins.getInstance().getItem(alternateJob);
+            if (item != null) {
+                if (item instanceof Job) {
+                    Job j = (Job) item;
+                    if (!j.getBuilds().isEmpty()) {
+                        b = j.getLastBuild();
+                    } else {
+                        listener.getLogger().printf("Job named %s does not have any existing builds, falling back to current job",
+                                alternateJob);
+                    }
+                } else {
+                    listener.getLogger().printf("Item named %s is not a job, falling back to current job.", alternateJob);
+                }
+            } else {
+                listener.getLogger().printf("Could not find job named %s, falling back to current job.", alternateJob);
+            }
+        }
+
         for (int i = 0; i < NUMBER_OF_BUILDS_TO_SEARCH; i++) {// limit the search to a small number to avoid loading too much
             b = b.getPreviousBuild();
             if (b == null) break;
@@ -300,6 +339,10 @@ public class ParallelTestExecutor extends Builder {
         }
 
         public AutoCompletionCandidates doAutoCompleteTestJob(@QueryParameter String value, @AncestorInPath Item self, @AncestorInPath ItemGroup container) {
+            return AutoCompletionCandidates.ofJobNames(AbstractProject.class, value, self, container);
+        }
+
+        public AutoCompletionCandidates doAutoCompleteAlternateJob(@QueryParameter String value, @AncestorInPath Item self, @AncestorInPath ItemGroup container) {
             return AutoCompletionCandidates.ofJobNames(AbstractProject.class, value, self, container);
         }
 
