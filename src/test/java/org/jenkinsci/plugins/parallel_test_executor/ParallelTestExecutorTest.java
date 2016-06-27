@@ -44,8 +44,6 @@ public class ParallelTestExecutorTest {
         alternateJob.getBuildersList().add(new TouchBuilder());
         alternateJob.getPublishersList().add(new JUnitResultArchiver("*.xml"));
         FreeStyleBuild alternateRun = jenkinsRule.assertBuildStatusSuccess(alternateJob.scheduleBuild2(0));
-        jenkinsRule.assertBuildStatusSuccess(alternateJob.scheduleBuild2(0));
-
 
         FreeStyleProject splitJob = jenkinsRule.createFreeStyleProject("splitJob");
         splitJob.setConcurrentBuild(true);

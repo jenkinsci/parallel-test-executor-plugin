@@ -294,7 +294,7 @@ public class ParallelTestExecutor extends Builder {
     }
 
     private static TestResult findPreviousTestResult(Run<?, ?> originalBuild, TaskListener listener, String alternateJob) {
-        Run<?,?> b = originalBuild;
+        Run<?,?> b = originalBuild.getPreviousBuild();
         if (alternateJob != null && !alternateJob.equals("")) {
             TopLevelItem item = Jenkins.getInstance().getItem(alternateJob);
             if (item != null) {
@@ -314,8 +314,7 @@ public class ParallelTestExecutor extends Builder {
             }
         }
 
-        for (int i = 0; i < NUMBER_OF_BUILDS_TO_SEARCH; i++) {// limit the search to a small number to avoid loading too much
-            b = b.getPreviousBuild();
+        for (int i = 0; i < NUMBER_OF_BUILDS_TO_SEARCH - 1; i++) {// limit the search to a small number to avoid loading too much
             if (b == null) break;
             if(!RESULTS_OF_BUILDS_TO_CONSIDER.contains(b.getResult())) continue;
 
@@ -327,6 +326,7 @@ public class ParallelTestExecutor extends Builder {
                 listener.getLogger().printf("Using build #%d as reference\n", b.getNumber());
                 return (TestResult) o;
             }
+            b = b.getPreviousBuild();
         }
         return null;    // couldn't find it
     }
