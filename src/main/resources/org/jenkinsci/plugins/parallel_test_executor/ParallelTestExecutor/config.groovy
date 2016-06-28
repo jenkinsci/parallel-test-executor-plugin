@@ -35,4 +35,7 @@ f.advanced {
     f.entry(title:"Automatically archive JUnit test results", field:"archiveTestResults") {
         f.checkbox(default: true)
     }
+    f.entry(title:"Alternate job to look in for test results", field:"alternateJob") {
+        f.textbox()
+    }
 }

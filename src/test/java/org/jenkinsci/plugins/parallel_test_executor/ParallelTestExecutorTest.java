@@ -1,14 +1,26 @@
 package org.jenkinsci.plugins.parallel_test_executor;
 
+import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
+import hudson.model.Label;
+import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
+import hudson.tasks.Shell;
+import hudson.tasks.junit.JUnitResultArchiver;
+import hudson.tasks.junit.TestResultAction;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.junit.Rule;
 import org.junit.Test;
+import org.jvnet.hudson.test.ExtractResourceSCM;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.TouchBuilder;
 import org.jvnet.hudson.test.recipes.LocalData;
 
+import java.util.Collections;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class ParallelTestExecutorTest {
@@ -23,6 +35,39 @@ public class ParallelTestExecutorTest {
         ParallelTestExecutor trigger = (ParallelTestExecutor) p.getBuilders().get(0);
 
         assertTrue(trigger.isArchiveTestResults());
+    }
+
+    @Test
+    public void alternateJobInFreestyle() throws Exception {
+        FreeStyleProject alternateJob = jenkinsRule.createFreeStyleProject("alternateJob");
+        alternateJob.setScm(new ExtractResourceSCM(getClass().getResource("preloadedResults.zip")));
+        alternateJob.getBuildersList().add(new TouchBuilder());
+        alternateJob.getPublishersList().add(new JUnitResultArchiver("*.xml"));
+        FreeStyleBuild alternateRun = jenkinsRule.assertBuildStatusSuccess(alternateJob.scheduleBuild2(0));
+
+        FreeStyleProject splitJob = jenkinsRule.createFreeStyleProject("splitJob");
+        splitJob.setConcurrentBuild(true);
+        splitJob.setScm(new ExtractResourceSCM(getClass().getResource("preloadedResults.zip")));
+        splitJob.getBuildersList().add(new TouchBuilder());
+        splitJob.getBuildersList().add(new Shell("#!/bin/bash\n"
+                + "mkdir -p results;"
+                + "cp report-Test${BUILD_NUMBER}.xml results")
+        );
+
+        FreeStyleProject mainJob = jenkinsRule.createFreeStyleProject("mainJob");
+        ParallelTestExecutor toRun = new ParallelTestExecutor(new CountDrivenParallelism(5), "splitJob", "excludes.txt",
+                "results/*.xml", true, Collections.<AbstractBuildParameters>emptyList());
+        toRun.setAlternateJob("alternateJob");
+        mainJob.getBuildersList().add(new Shell("echo 'pants'"));
+        mainJob.getBuildersList().add(toRun);
+
+        FreeStyleBuild mainBuild = jenkinsRule.assertBuildStatusSuccess(mainJob.scheduleBuild2(0));
+        jenkinsRule.assertLogContains("divided into 5 sets.", mainBuild);
+
+        assertEquals(alternateRun.getAction(TestResultAction.class).getTotalCount(),
+                mainBuild.getAction(TestResultAction.class).getTotalCount());
+
+        assertEquals(6, splitJob.getNextBuildNumber());
     }
 
     @Test

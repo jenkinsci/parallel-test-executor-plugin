@@ -57,7 +57,8 @@ class TestCollector extends InvisibleAction implements Serializable {
                     private static final long serialVersionUID = 1L;
                     public Integer invoke(File base, VirtualChannel channel) throws IOException {
                         if(!base.exists())  return 0;
-                        assert dst.getChannel()==null;
+                        // NOTE: This used to check if dst.getChannel() is null, but that has never actually returned null.
+                        assert !dst.isRemote();
 
                         try {
                             class CopyImpl extends Copy {
