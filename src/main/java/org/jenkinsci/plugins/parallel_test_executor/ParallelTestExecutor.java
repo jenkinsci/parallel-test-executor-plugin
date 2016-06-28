@@ -296,18 +296,13 @@ public class ParallelTestExecutor extends Builder {
     private static TestResult findPreviousTestResult(Run<?, ?> originalBuild, TaskListener listener, String alternateJob) {
         Run<?,?> b = originalBuild.getPreviousBuild();
         if (alternateJob != null && !alternateJob.equals("")) {
-            TopLevelItem item = Jenkins.getInstance().getItem(alternateJob);
-            if (item != null) {
-                if (item instanceof Job) {
-                    Job j = (Job) item;
-                    if (!j.getBuilds().isEmpty()) {
-                        b = j.getLastBuild();
-                    } else {
-                        listener.getLogger().printf("Job named %s does not have any existing builds, falling back to current job",
-                                alternateJob);
-                    }
+            Job j = Jenkins.getInstance().getItem(alternateJob, originalBuild.getParent(), Job.class);
+            if (j != null) {
+                if (!j.getBuilds().isEmpty()) {
+                    b = j.getLastBuild();
                 } else {
-                    listener.getLogger().printf("Item named %s is not a job, falling back to current job.", alternateJob);
+                    listener.getLogger().printf("Job named %s does not have any existing builds, falling back to current job",
+                            alternateJob);
                 }
             } else {
                 listener.getLogger().printf("Could not find job named %s, falling back to current job.", alternateJob);
@@ -339,11 +334,11 @@ public class ParallelTestExecutor extends Builder {
         }
 
         public AutoCompletionCandidates doAutoCompleteTestJob(@QueryParameter String value, @AncestorInPath Item self, @AncestorInPath ItemGroup container) {
-            return AutoCompletionCandidates.ofJobNames(AbstractProject.class, value, self, container);
+            return AutoCompletionCandidates.ofJobNames(Job.class, value, self, container);
         }
 
         public AutoCompletionCandidates doAutoCompleteAlternateJob(@QueryParameter String value, @AncestorInPath Item self, @AncestorInPath ItemGroup container) {
-            return AutoCompletionCandidates.ofJobNames(AbstractProject.class, value, self, container);
+            return AutoCompletionCandidates.ofJobNames(Job.class, value, self, container);
         }
 
         @Override

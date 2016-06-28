@@ -2,6 +2,11 @@ package org.jenkinsci.plugins.parallel_test_executor;
 
 import com.google.inject.Inject;
 import hudson.Extension;
+import hudson.model.AbstractProject;
+import hudson.model.AutoCompletionCandidates;
+import hudson.model.Item;
+import hudson.model.ItemGroup;
+import hudson.model.Job;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 
@@ -14,8 +19,10 @@ import org.jenkinsci.plugins.workflow.steps.AbstractStepImpl;
 import org.jenkinsci.plugins.workflow.steps.AbstractSynchronousStepExecution;
 import org.jenkinsci.plugins.workflow.steps.Step;
 import org.jenkinsci.plugins.workflow.steps.StepContextParameter;
+import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
+import org.kohsuke.stapler.QueryParameter;
 
 /**
  * Allows the splitting logic to be accessed from a workflow.
@@ -66,6 +73,9 @@ public final class SplitStep extends AbstractStepImpl {
             return "Split Test Runs";
         }
 
+        public AutoCompletionCandidates doAutoCompleteAlternateJob(@QueryParameter String value, @AncestorInPath Item self, @AncestorInPath ItemGroup container) {
+            return AutoCompletionCandidates.ofJobNames(Job.class, value, self, container);
+        }
     }
 
     public static final class Execution extends AbstractSynchronousStepExecution<List<?>> {
