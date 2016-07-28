@@ -7,12 +7,10 @@ import hudson.model.TaskListener;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.jenkinsci.plugins.workflow.steps.AbstractStepDescriptorImpl;
 import org.jenkinsci.plugins.workflow.steps.AbstractStepImpl;
 import org.jenkinsci.plugins.workflow.steps.AbstractSynchronousStepExecution;
-import org.jenkinsci.plugins.workflow.steps.Step;
 import org.jenkinsci.plugins.workflow.steps.StepContextParameter;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -59,15 +57,17 @@ public final class SplitStep extends AbstractStepImpl {
 
     public static final class Execution extends AbstractSynchronousStepExecution<List<?>> {
 
-        @Inject private SplitStep step;
-        @StepContextParameter private Run<?,?> build;
-        @StepContextParameter private TaskListener listener;
+        private static final long serialVersionUID = 1L;
+
+        @Inject private transient SplitStep step;
+        @StepContextParameter private transient Run<?,?> build;
+        @StepContextParameter private transient TaskListener listener;
 
         @Override protected List<?> run() throws Exception {
             if (step.generateInclusions) {
                 return ParallelTestExecutor.findTestSplits(step.parallelism, build, listener, step.generateInclusions);
             } else {
-                List<List<String>> result = new ArrayList<List<String>>();
+                List<List<String>> result = new ArrayList<>();
                 for (InclusionExclusionPattern pattern : ParallelTestExecutor.findTestSplits(step.parallelism, build, listener, step.generateInclusions)) {
                     result.add(pattern.getList());
                 }

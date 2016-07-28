@@ -98,8 +98,8 @@ public class ParallelTestExecutorUnitTest {
         CountDrivenParallelism parallelism = new CountDrivenParallelism(5);
         List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, build, listener, true);
         assertEquals(5, splits.size());
-        List<String> exclusions = new ArrayList<String>(splits.get(0).getList());
-        List<String> inclusions = new ArrayList<String>();
+        List<String> exclusions = new ArrayList<>(splits.get(0).getList());
+        List<String> inclusions = new ArrayList<>();
         for (int i = 0; i < splits.size(); i++) {
             InclusionExclusionPattern split = splits.get(i);
             assertEquals(i != 0, split.isIncludes());

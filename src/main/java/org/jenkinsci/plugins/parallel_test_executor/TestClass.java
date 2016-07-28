@@ -1,11 +1,13 @@
 package org.jenkinsci.plugins.parallel_test_executor;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.tasks.junit.ClassResult;
 import org.jenkinsci.plugins.parallel_test_executor.ParallelTestExecutor.Knapsack;
 
 /**
  * Execution time of a specific test case.
  */
+@SuppressFBWarnings(value="EQ_COMPARETO_USE_OBJECT_EQUALS", justification="Cf. justification in Knapsack.")
 public class TestClass implements Comparable<TestClass> {
     String className;
     long duration;

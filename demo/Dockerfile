@@ -1,4 +1,4 @@
-FROM jenkins:1.625.3
+FROM jenkins:2.7.1
 
 USER root
 ENV MAVEN_VERSION 3.3.1
