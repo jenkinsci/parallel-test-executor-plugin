@@ -1,4 +1,4 @@
-TAG=1.8
+TAG=$(shell perl -n -e 'if (/parallel-test-executor:(.+)/) {print $$1}' plugins.txt)
 IMAGE=jenkinsci/parallel-test-executor-demo
 DOCKER_RUN=docker run --rm -p 8080:8080 -ti
 
