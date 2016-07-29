@@ -4,10 +4,10 @@
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
     <version>2.12</version>
-    <relativePath/>
+    <relativePath />
   </parent>
   <artifactId>parallel-test-executor</artifactId>
-  <version>1.9-SNAPSHOT</version>
+  <version>1.9</version>
   <packaging>hpi</packaging>
   <name>Parallel Test Executor Plugin</name>
   <url>http://wiki.jenkins-ci.org/display/JENKINS/Parallel+Test+Executor+Plugin</url>
@@ -29,7 +29,7 @@
   <scm>
     <connection>scm:git:git://github.com/jenkinsci/${project.artifactId}-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:jenkinsci/${project.artifactId}-plugin.git</developerConnection>
-    <tag>HEAD</tag>
+    <tag>parallel-test-executor-1.9</tag>
   </scm>
   <dependencies>
     <dependency>
