@@ -13,7 +13,7 @@ mailer:1.17
 matrix-project:1.7.1
 maven-plugin:2.13
 mock-slave:1.9
-parallel-test-executor:1.8
+parallel-test-executor:1.9
 parameterized-trigger:2.32
 run-condition:1.0
 scm-api:1.2
