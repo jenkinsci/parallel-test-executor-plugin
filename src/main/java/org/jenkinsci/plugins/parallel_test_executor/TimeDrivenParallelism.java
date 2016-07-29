@@ -6,6 +6,7 @@ import hudson.util.TimeUnit2;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.util.List;
+import org.jenkinsci.Symbol;
 
 /**
  * @author Kohsuke Kawaguchi
@@ -28,6 +29,7 @@ public class TimeDrivenParallelism extends Parallelism {
         return (int)((total+chunk-1)/chunk);
     }
 
+    @Symbol("time")
     @Extension
     public static class DescriptorImpl extends Descriptor<Parallelism> {
         @Override

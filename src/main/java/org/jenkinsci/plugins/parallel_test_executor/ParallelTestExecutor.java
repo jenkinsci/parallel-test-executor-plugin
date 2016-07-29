@@ -1,6 +1,8 @@
 package org.jenkinsci.plugins.parallel_test_executor;
 
 import com.google.common.collect.ImmutableSet;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import hudson.AbortException;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -91,6 +93,7 @@ public class ParallelTestExecutor extends Builder {
     /**
      * {@link org.jenkinsci.plugins.parallel_test_executor.TestClass}es are divided into multiple sets of roughly equal size.
      */
+    @SuppressFBWarnings(value="EQ_COMPARETO_USE_OBJECT_EQUALS", justification="We wish to consider knapsacks as distinct items, just sort by size.")
     static class Knapsack implements Comparable<Knapsack> {
         /**
          * Total duration of all {@link org.jenkinsci.plugins.parallel_test_executor.TestClass}es that are in this knapsack.
@@ -113,20 +116,21 @@ public class ParallelTestExecutor extends Builder {
 
     @Override
     public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
-        FilePath dir = build.getWorkspace().child("test-splits");
+        FilePath workspace = build.getWorkspace();
+        if (workspace == null) {
+            throw new AbortException("no workspace");
+        }
+        FilePath dir = workspace.child("test-splits");
         dir.deleteRecursive();
         List<InclusionExclusionPattern> splits = findTestSplits(parallelism, build, listener, includesPatternFile != null);
         for (int i = 0; i < splits.size(); i++) {
             InclusionExclusionPattern pattern = splits.get(i);
-            OutputStream os = dir.child("split." + i + "." + (pattern.isIncludes() ? "include" : "exclude") + ".txt").write();
-            try {
-                PrintWriter pw = new PrintWriter(new OutputStreamWriter(os, Charsets.UTF_8));
+            try (OutputStream os = dir.child("split." + i + "." + (pattern.isIncludes() ? "include" : "exclude") + ".txt").write();
+                 OutputStreamWriter osw = new OutputStreamWriter(os, Charsets.UTF_8);
+                 PrintWriter pw = new PrintWriter(osw)) {
                 for (String filePattern : pattern.getList()) {
                     pw.println(filePattern);
                 }
-                pw.close();
-            } finally {
-                os.close();
             }
         }
 
@@ -146,17 +150,17 @@ public class ParallelTestExecutor extends Builder {
             return Collections.singletonList(new InclusionExclusionPattern(Collections.<String>emptyList(), false));
         } else {
 
-            Map<String/*fully qualified class name*/, TestClass> data = new TreeMap<String, TestClass>();
+            Map<String/*fully qualified class name*/, TestClass> data = new TreeMap<>();
             collect(tr, data);
 
             // sort in the descending order of the duration
-            List<TestClass> sorted = new ArrayList<TestClass>(data.values());
+            List<TestClass> sorted = new ArrayList<>(data.values());
             Collections.sort(sorted);
 
             // degree of the parallelism. we need minimum 1
             final int n = Math.max(1, parallelism.calculate(sorted));
 
-            List<Knapsack> knapsacks = new ArrayList<Knapsack>(n);
+            List<Knapsack> knapsacks = new ArrayList<>(n);
             for (int i = 0; i < n; i++)
                 knapsacks.add(new Knapsack());
 
@@ -165,7 +169,7 @@ public class ParallelTestExecutor extends Builder {
                 this simply by a greedy algorithm. We pack heavier items first,
                 and the result should be of roughly equal size
              */
-            PriorityQueue<Knapsack> q = new PriorityQueue<Knapsack>(knapsacks);
+            PriorityQueue<Knapsack> q = new PriorityQueue<>(knapsacks);
             for (TestClass d : sorted) {
                 Knapsack k = q.poll();
                 k.add(d);
@@ -185,14 +189,14 @@ public class ParallelTestExecutor extends Builder {
             }
             variance /= n;
             long stddev = (long) Math.sqrt(variance);
-            listener.getLogger().printf("%d test classes (%dms) divided into %d sets. Min=%dms, Average=%dms, Max=%dms, stddev=%dms\n",
+            listener.getLogger().printf("%d test classes (%dms) divided into %d sets. Min=%dms, Average=%dms, Max=%dms, stddev=%dms%n",
                     data.size(), total, n, min, average, max, stddev);
 
-            List<InclusionExclusionPattern> r = new ArrayList<InclusionExclusionPattern>();
+            List<InclusionExclusionPattern> r = new ArrayList<>();
             for (int i = 0; i < n; i++) {
                 Knapsack k = knapsacks.get(i);
                 boolean shouldIncludeElements = generateInclusions && i != 0;
-                List<String> elements = new ArrayList<String>();
+                List<String> elements = new ArrayList<>();
                 r.add(new InclusionExclusionPattern(elements, shouldIncludeElements));
                 for (TestClass d : sorted) {
                     if (shouldIncludeElements == (d.knapsack == k)) {
@@ -221,7 +225,7 @@ public class ParallelTestExecutor extends Builder {
         BlockingBehaviour blocking = new BlockingBehaviour(Result.ABORTED, Result.UNSTABLE, Result.FAILURE);
         final AtomicInteger iota = new AtomicInteger(0);
 
-        List<AbstractBuildParameters> parameterList = new ArrayList<AbstractBuildParameters>();
+        List<AbstractBuildParameters> parameterList = new ArrayList<>();
         parameterList.add(
                 // put a marker action that we look for to collect test reports
                 new AbstractBuildParameters() {
@@ -235,7 +239,7 @@ public class ParallelTestExecutor extends Builder {
         }
 
         // actual logic of child process triggering is left up to the parameterized build
-        List<MultipleBinaryFileParameterFactory.ParameterBinding> parameterBindings = new ArrayList<MultipleBinaryFileParameterFactory.ParameterBinding>();
+        List<MultipleBinaryFileParameterFactory.ParameterBinding> parameterBindings = new ArrayList<>();
         parameterBindings.add(new MultipleBinaryFileParameterFactory.ParameterBinding(getPatternFile(), "test-splits/split.*.exclude.txt"));
         if (includesPatternFile != null) {
             parameterBindings.add(new MultipleBinaryFileParameterFactory.ParameterBinding(getIncludesPatternFile(), "test-splits/split.*.include.txt"));
@@ -285,7 +289,7 @@ public class ParallelTestExecutor extends Builder {
 
             Object o = tra.getResult();
             if (o instanceof TestResult) {
-                listener.getLogger().printf("Using build #%d as reference\n", b.getNumber());
+                listener.getLogger().printf("Using build #%d as reference%n", b.getNumber());
                 return (TestResult) o;
             }
         }

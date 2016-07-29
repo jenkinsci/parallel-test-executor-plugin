@@ -1,6 +1,7 @@
 package org.jenkinsci.plugins.parallel_test_executor;
 
 import com.google.common.collect.Lists;
+import hudson.AbortException;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.model.AbstractBuild;
@@ -16,8 +17,6 @@ import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -59,7 +58,11 @@ public class MultipleBinaryFileParameterFactory extends AbstractBuildParameterFa
         for (final ParameterBinding parameterBinding : parametersList) {
             // save them into the master because FileParameterValue might need files after the slave workspace have disappeared/reused
             FilePath target = new FilePath(build.getRootDir()).child("parameter-files");
-                int k = build.getWorkspace().copyRecursiveTo(parameterBinding.filePattern, target);
+            FilePath workspace = build.getWorkspace();
+            if (workspace == null) {
+                throw new AbortException("no workspace");
+            }
+                int k = workspace.copyRecursiveTo(parameterBinding.filePattern, target);
                 totalFiles += k;
                 if (k > 0) {
                     for (final FilePath f : target.list(parameterBinding.filePattern)) {

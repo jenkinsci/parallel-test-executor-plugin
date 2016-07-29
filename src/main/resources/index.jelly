@@ -1,3 +1,4 @@
+<?jelly escape-by-default='true'?>
 <div>
   Adds a new builder that enables simple parallel execution of tests.
 </div>

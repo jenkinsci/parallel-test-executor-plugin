@@ -1,7 +1,7 @@
-FROM jenkins:1.625.3
+FROM jenkins:2.7.1
 
 USER root
-ENV MAVEN_VERSION 3.3.1
+ENV MAVEN_VERSION 3.3.9
 RUN cd /usr/local; wget -O - http://mirrors.ibiblio.org/apache/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar xvzf -
 RUN ln -sv /usr/local/apache-maven-$MAVEN_VERSION/bin/mvn /usr/local/bin
 USER jenkins

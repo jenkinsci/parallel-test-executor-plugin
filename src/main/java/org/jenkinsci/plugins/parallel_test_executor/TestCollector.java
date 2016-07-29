@@ -1,5 +1,6 @@
 package org.jenkinsci.plugins.parallel_test_executor;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.FilePath;
 import hudson.Util;
 import hudson.console.ModelHyperlinkNote;
@@ -25,6 +26,7 @@ class TestCollector extends InvisibleAction implements Serializable {
     // none of this is meant to persist
     private transient AbstractBuild<?,?> collector;
     private transient ParallelTestExecutor testExecutor;
+    @SuppressFBWarnings(value="SE_TRANSIENT_FIELD_NOT_RESTORED", justification="not needed after initial use")
     private transient int ordinal;
 
     public TestCollector(AbstractBuild<?, ?> collector, ParallelTestExecutor testExecutor, int ordinal) {
@@ -45,7 +47,11 @@ class TestCollector extends InvisibleAction implements Serializable {
 
             final FilePath src = build.getWorkspace();
             if (src==null)      return; // trying to be defensive in case of catastrophic build failure
-            final FilePath dst = collector.getWorkspace().child("test-splits/reports/"+ordinal);
+            FilePath workspace = collector.getWorkspace();
+            if (workspace == null) {
+                return; // ditto
+            }
+            final FilePath dst = workspace.child("test-splits/reports/"+ordinal);
             dst.mkdirs();
 
             final String includes = testExecutor.getTestReportFiles();
@@ -107,9 +113,7 @@ class TestCollector extends InvisibleAction implements Serializable {
                     Util.deleteRecursive(t);
                 }
             }
-        } catch (IOException e) {
-            e.printStackTrace(listener.error("Failed to aggregate test reports for "+collector.getFullDisplayName()));
-        } catch (InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace(listener.error("Failed to aggregate test reports for "+collector.getFullDisplayName()));
         }
     }

@@ -5,6 +5,7 @@ import hudson.model.Descriptor;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.util.List;
+import org.jenkinsci.Symbol;
 
 /**
  * @author Kohsuke Kawaguchi
@@ -22,6 +23,7 @@ public class CountDrivenParallelism extends Parallelism {
         return size;
     }
 
+    @Symbol("count")
     @Extension
     public static class DescriptorImpl extends Descriptor<Parallelism> {
         @Override
