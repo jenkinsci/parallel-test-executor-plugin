@@ -8,13 +8,10 @@ RUN wget -q -O /usr/bin/docker --no-check-certificate https://get.docker.com/bui
 ADD repo /tmp/repo
 COPY gen.sh /tmp/
 ADD lib /tmp/lib
-RUN chown -R jenkins.jenkins /tmp/repo /tmp/lib
+COPY plugins /usr/share/jenkins/ref/plugins
+RUN chown -R jenkins.jenkins /tmp/repo /tmp/lib /usr/share/jenkins/ref/plugins
 
 USER jenkins
-
-ENV JENKINS_UC http://jenkins-updates.cloudbees.com
-COPY plugins.txt /tmp/
-RUN /usr/local/bin/plugins.sh /tmp/plugins.txt
 
 RUN cd /tmp/repo && \
     bash ../gen.sh && \
