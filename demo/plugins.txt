@@ -3,7 +3,7 @@ org.jenkins-ci.plugins:authentication-tokens:1.3
 org.jenkins-ci.plugins:branch-api:1.10.2
 org.jenkins-ci.plugins:cloudbees-folder:5.12
 org.jenkins-ci.plugins:conditional-buildstep:1.3.5
-org.jenkins-ci.plugins:config-file-provider:2.11
+org.jenkins-ci.plugins:config-file-provider:2.13
 org.jenkins-ci.plugins:credentials:2.1.4
 org.jenkins-ci.plugins:display-url-api:0.3
 org.jenkins-ci.plugins:docker-commons:1.4.1
