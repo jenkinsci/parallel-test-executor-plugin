@@ -19,7 +19,7 @@ org.jenkins-ci.plugins:junit:1.18
 org.jenkins-ci.plugins:mailer:1.18
 org.jenkins-ci.plugins:matrix-project:1.7.1
 org.jenkins-ci.main:maven-plugin:2.13
-org.jenkins-ci.plugins:mock-slave:1.9
+org.jenkins-ci.plugins:mock-slave:1.10
 org.jenkins-ci.plugins:parallel-test-executor:1.9
 org.jenkins-ci.plugins:parameterized-trigger:2.32
 org.jenkins-ci.plugins:run-condition:1.0
