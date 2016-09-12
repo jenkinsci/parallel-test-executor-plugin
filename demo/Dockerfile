@@ -2,9 +2,6 @@ FROM jenkins:2.7.3
 
 USER root
 
-RUN wget -q -O /usr/bin/docker --no-check-certificate https://get.docker.com/builds/Linux/x86_64/docker-1.9.0 && \
-    chmod a+x /usr/bin/docker
-
 ADD repo /tmp/repo
 COPY gen.sh /tmp/
 ADD lib /tmp/lib
