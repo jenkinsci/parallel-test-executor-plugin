@@ -22,6 +22,7 @@ org.jenkins-ci.main:maven-plugin:2.13
 org.jenkins-ci.plugins:mock-slave:1.10
 org.jenkins-ci.plugins:parallel-test-executor:1.9
 org.jenkins-ci.plugins:parameterized-trigger:2.32
+org.jenkins-ci.plugins:pipeline-stage-step:2.2
 org.jenkins-ci.plugins:run-condition:1.0
 org.jenkins-ci.plugins:scm-api:1.3
 org.jenkins-ci.plugins:script-security:1.22
