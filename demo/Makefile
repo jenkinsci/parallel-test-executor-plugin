@@ -4,7 +4,8 @@ DOCKER_RUN=docker run --rm -p 8080:8080 -v m2repo:/m2repo -v /var/run/docker.soc
 
 copy-plugins:
 	set -e; \
-	mkdir -p plugins; \
+	rm -rf plugins; \
+	mkdir plugins; \
 	for gav in `cat plugins.txt`; do \
 	  g=`echo $$gav | cut -f1 -d: | perl -pe 's{[.]}{/}g'`; \
 	  a=`echo $$gav | cut -f2 -d:`; \
@@ -27,9 +28,6 @@ volume:
 
 run: build volume
 	$(DOCKER_RUN) $(IMAGE):$(TAG)
-
-clean:
-	rm -rf plugins
 
 push:
 	docker push $(IMAGE):$(TAG)
