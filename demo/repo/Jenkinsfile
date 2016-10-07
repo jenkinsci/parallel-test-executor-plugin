@@ -1,15 +1,18 @@
-def splits = splitTests parallelism: count(5), generateInclusions: true
-def branches = [:]
-for (int i = 0; i < splits.size(); i++) {
-  def split = splits[i]
-  branches["split${i}"] = {
-    node('!master') {
-      checkout scm
-      writeFile file: (split.includes ? 'inclusions.txt' : 'exclusions.txt'), text: split.list.join("\n")
-      writeFile file: (split.includes ? 'exclusions.txt' : 'inclusions.txt'), text: ''
-      sh 'mvn -s /tmp/settings.xml -B clean test -Dmaven.test.failure.ignore'
-      junit 'target/surefire-reports/*.xml'
-    }
+@Library('testInParallel') _
+
+stage('Sources') {
+  node {
+    checkout scm
+    stash name: 'sources', excludes: 'Jenkinsfile,target/'
   }
 }
-parallel branches
+
+stage('Testing') {
+  testInParallel(count(5), 'inclusions.txt', 'exclusions.txt', 'target/surefire-reports/TEST-*.xml', 'maven:3.3.9-jdk-8', {
+    unstash 'sources'
+  }, {
+    configFileProvider([configFile(fileId: 'jenkins-mirror', variable: 'SETTINGS')]) {
+      sh 'mvn -s $SETTINGS -B clean test -Dmaven.test.failure.ignore'
+    }
+  })
+}
