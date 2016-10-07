@@ -1,6 +1,6 @@
 TAG=$(shell perl -n -e 'if (/parallel-test-executor:(.+)/) {print $$1}' plugins.txt)
 IMAGE=jenkinsci/parallel-test-executor-demo
-DOCKER_RUN=docker run --rm -p 8080:8080 -v m2repo:/m2repo -v $(shell which docker):/usr/bin/docker -v /var/run/docker.sock:/var/run/docker.sock --group-add=$(shell stat -c %g /var/run/docker.sock) -ti
+DOCKER_RUN=docker run --rm -p 127.0.0.1:8080:8080 -v m2repo:/m2repo -v $(shell which docker):/usr/bin/docker -v /var/run/docker.sock:/var/run/docker.sock --group-add=$(shell stat -c %g /var/run/docker.sock) -ti
 
 copy-plugins:
 	set -e; \
