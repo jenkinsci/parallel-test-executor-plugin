@@ -9,7 +9,7 @@ org.jenkins-ci.plugins:display-url-api:0.5
 org.jenkins-ci.plugins:docker-commons:1.5
 org.jenkins-ci.plugins:docker-workflow:1.9.1
 org.jenkins-ci.plugins:durable-task:1.12
-org.jenkins-ci.plugins:git:3.0.0
+org.jenkins-ci.plugins:git:3.0.1
 org.jenkins-ci.plugins:git-client:2.1.0
 org.jenkins-ci.plugins:git-server:1.7
 org.jenkins-ci.plugins.icon-shim:icon-shim:2.0.3
