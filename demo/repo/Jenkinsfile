@@ -8,7 +8,7 @@ stage('Sources') {
 }
 
 stage('Testing') {
-  testInParallel(count(5), 'inclusions.txt', 'exclusions.txt', 'target/surefire-reports/TEST-*.xml', 'maven:3.3.9-jdk-8', {
+  testInParallel(count(5), 'JAVA', 'inclusions.txt', 'exclusions.txt', 'target/surefire-reports/TEST-*.xml', 'maven:3.3.9-jdk-8', {
     unstash 'sources'
   }, {
     configFileProvider([configFile(fileId: 'jenkins-mirror', variable: 'SETTINGS')]) {

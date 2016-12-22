@@ -8,6 +8,10 @@ ADD lib /tmp/lib
 COPY plugins /usr/share/jenkins/ref/plugins
 RUN chown -R jenkins.jenkins /tmp/repo /tmp/lib /usr/share/jenkins/ref/plugins
 
+ADD repo_pytest /tmp/repo_pytest
+COPY gen_pytests.sh /tmp/
+RUN chown -R jenkins.jenkins /tmp/repo_pytest
+
 USER jenkins
 
 RUN cd /tmp/repo && \
@@ -16,6 +20,12 @@ RUN cd /tmp/repo && \
     git add . && \
     git -c user.email=demo@jenkins-ci.org -c user.name="Parallel Test Executor Demo" commit -m 'demo' && \
     cd /tmp/lib && \
+    git init && \
+    git add . && \
+    git -c user.email=demo@jenkins-ci.org -c user.name="Parallel Test Executor Demo" commit -m 'demo'
+
+RUN cd /tmp/repo_pytest && \
+    bash ../gen_pytests.sh && \
     git init && \
     git add . && \
     git -c user.email=demo@jenkins-ci.org -c user.name="Parallel Test Executor Demo" commit -m 'demo'

@@ -168,7 +168,7 @@ public class ParallelTestExecutor extends Builder {
             collect(tr, data, testMode);
 
             // sort in the descending order of the duration
-            List<TestEntity> sorted = new ArrayList<TestEntity>(data.values());
+            List<TestEntity> sorted = new ArrayList<>(data.values());
             Collections.sort(sorted);
             
             // degree of the parallelism. we need minimum 1
