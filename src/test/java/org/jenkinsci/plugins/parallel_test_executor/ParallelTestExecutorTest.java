@@ -52,4 +52,54 @@ public class ParallelTestExecutorTest {
         jenkinsRule.assertLogContains("splits[1]: includes=true list=[two.java, two.class]", b2);
     }
 
+    @Test
+    public void workflowGenerateInclusionsFiltered() throws Exception {
+        WorkflowJob p = jenkinsRule.jenkins.createProject(WorkflowJob.class, "p");
+        p.setDefinition(new CpsFlowDefinition(
+                "def splits = splitTests parallelism: count(2), generateInclusions: true, filter: '.*?three'\n" +
+                        "echo \"splits.size=${splits.size()}\"; for (int i = 0; i < splits.size(); i++) {\n" +
+                        "  def split = splits[i]; echo \"splits[${i}]: includes=${split.includes} list=${split.list}\"\n" +
+                        "}\n" +
+                        "node {\n" +
+                        "  writeFile file: 'TEST-1.xml', text: '<testsuite name=\"one\"><testcase name=\"x\"/></testsuite>'\n" +
+                        "  writeFile file: 'TEST-2.xml', text: '<testsuite name=\"two\"><testcase name=\"y\"/></testsuite>'\n" +
+                        "  writeFile file: 'TEST-3.xml', text: '<testsuite name=\"three\"><testcase name=\"z\"/></testsuite>'\n" +
+                        "  writeFile file: 'TEST-3.xml', text: '<testsuite name=\"otherthree\"><testcase name=\"a\"/></testsuite>'\n" +
+                        "  junit 'TEST-*.xml'\n" +
+                        "}", true));
+        WorkflowRun b1 = jenkinsRule.assertBuildStatusSuccess(p.scheduleBuild2(0));
+        jenkinsRule.assertLogContains("splits.size=1", b1);
+        jenkinsRule.assertLogContains("splits[0]: includes=false list=[]", b1);
+
+        WorkflowRun b2 = jenkinsRule.assertBuildStatusSuccess(p.scheduleBuild2(0));
+        jenkinsRule.assertLogContains("splits.size=2", b2);
+        jenkinsRule.assertLogContains("splits[0]: includes=false list=[two.java, two.class]", b2);
+        jenkinsRule.assertLogContains("splits[1]: includes=true list=[two.java, two.class]", b2);
+    }
+
+    @Test
+    public void workflowGenerateInclusionsFilteredTwo() throws Exception {
+        WorkflowJob p = jenkinsRule.jenkins.createProject(WorkflowJob.class, "p");
+        p.setDefinition(new CpsFlowDefinition(
+                "def splits = splitTests parallelism: count(2), generateInclusions: true, filter: '(three|other)'\n" +
+                        "echo \"splits.size=${splits.size()}\"; for (int i = 0; i < splits.size(); i++) {\n" +
+                        "  def split = splits[i]; echo \"splits[${i}]: includes=${split.includes} list=${split.list}\"\n" +
+                        "}\n" +
+                        "node {\n" +
+                        "  writeFile file: 'TEST-1.xml', text: '<testsuite name=\"one\"><testcase name=\"x\"/></testsuite>'\n" +
+                        "  writeFile file: 'TEST-2.xml', text: '<testsuite name=\"two\"><testcase name=\"y\"/></testsuite>'\n" +
+                        "  writeFile file: 'TEST-3.xml', text: '<testsuite name=\"three\"><testcase name=\"z\"/></testsuite>'\n" +
+                        "  writeFile file: 'TEST-3.xml', text: '<testsuite name=\"otherth\"><testcase name=\"a\"/></testsuite>'\n" +
+                        "  junit 'TEST-*.xml'\n" +
+                        "}", true));
+        WorkflowRun b1 = jenkinsRule.assertBuildStatusSuccess(p.scheduleBuild2(0));
+        jenkinsRule.assertLogContains("splits.size=1", b1);
+        jenkinsRule.assertLogContains("splits[0]: includes=false list=[]", b1);
+
+        WorkflowRun b2 = jenkinsRule.assertBuildStatusSuccess(p.scheduleBuild2(0));
+        jenkinsRule.assertLogContains("splits.size=2", b2);
+        jenkinsRule.assertLogContains("splits[0]: includes=false list=[two.java, two.class]", b2);
+        jenkinsRule.assertLogContains("splits[1]: includes=true list=[two.java, two.class]", b2);
+    }
+
 }

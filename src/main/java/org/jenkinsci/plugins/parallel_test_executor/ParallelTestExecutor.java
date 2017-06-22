@@ -122,7 +122,7 @@ public class ParallelTestExecutor extends Builder {
         }
         FilePath dir = workspace.child("test-splits");
         dir.deleteRecursive();
-        List<InclusionExclusionPattern> splits = findTestSplits(parallelism, build, listener, includesPatternFile != null);
+        List<InclusionExclusionPattern> splits = findTestSplits(parallelism, build, listener, includesPatternFile != null, "");
         for (int i = 0; i < splits.size(); i++) {
             InclusionExclusionPattern pattern = splits.get(i);
             try (OutputStream os = dir.child("split." + i + "." + (pattern.isIncludes() ? "include" : "exclude") + ".txt").write();
@@ -144,6 +144,10 @@ public class ParallelTestExecutor extends Builder {
     }
 
     static List<InclusionExclusionPattern> findTestSplits(Parallelism parallelism, Run<?,?> build, TaskListener listener, boolean generateInclusions) {
+        return findTestSplits(parallelism, build, listener, generateInclusions, "");
+    }
+
+    static List<InclusionExclusionPattern> findTestSplits(Parallelism parallelism, Run<?,?> build, TaskListener listener, boolean generateInclusions, String filter) {
         TestResult tr = findPreviousTestResult(build, listener);
         if (tr == null) {
             listener.getLogger().println("No record available, so executing everything in one place");
@@ -151,7 +155,7 @@ public class ParallelTestExecutor extends Builder {
         } else {
 
             Map<String/*fully qualified class name*/, TestClass> data = new TreeMap<>();
-            collect(tr, data);
+            collect(tr, data, filter);
 
             // sort in the descending order of the duration
             List<TestClass> sorted = new ArrayList<>(data.values());
@@ -263,17 +267,19 @@ public class ParallelTestExecutor extends Builder {
     /**
      * Recursive visits the structure inside {@link hudson.tasks.test.TestResult}.
      */
-    static private void collect(TestResult r, Map<String, TestClass> data) {
+    static private void collect(TestResult r, Map<String, TestClass> data, String filter) {
         if (r instanceof ClassResult) {
             ClassResult cr = (ClassResult) r;
             TestClass dp = new TestClass(cr);
-            data.put(dp.className, dp);
+            if (!dp.className.matches(filter + ".*")) {
+                data.put(dp.className, dp);
+            }
             return; // no need to go deeper
         }
         if (r instanceof TabulatedResult) {
             TabulatedResult tr = (TabulatedResult) r;
             for (TestResult child : tr.getChildren()) {
-                collect(child, data);
+                collect(child, data, filter);
             }
         }
     }
