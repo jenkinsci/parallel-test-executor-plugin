@@ -7,4 +7,7 @@
     <f:entry field="generateInclusions">
         <f:checkbox title="Generate inclusion patterns"/>
     </f:entry>
+    <f:entry title="Tests filter" description="Filter pattern for test exclusions" field="filter">
+        <f:textbox />
+    </f:entry>
 </j:jelly>
