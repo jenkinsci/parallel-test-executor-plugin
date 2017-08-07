@@ -16,6 +16,8 @@ import hudson.tasks.junit.JUnitResultArchiver;
 import hudson.tasks.test.AbstractTestResultAction;
 import hudson.tasks.test.TabulatedResult;
 import hudson.tasks.test.TestResult;
+import jenkins.branch.MultiBranchProject;
+import jenkins.scm.api.metadata.PrimaryInstanceMetadataAction;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -279,21 +281,89 @@ public class ParallelTestExecutor extends Builder {
     }
 
     private static TestResult findPreviousTestResult(Run<?, ?> b, TaskListener listener) {
-        for (int i = 0; i < NUMBER_OF_BUILDS_TO_SEARCH; i++) {// limit the search to a small number to avoid loading too much
-            b = b.getPreviousBuild();
-            if (b == null) break;
-            if(!RESULTS_OF_BUILDS_TO_CONSIDER.contains(b.getResult())) continue;
-
-            AbstractTestResultAction tra = b.getAction(AbstractTestResultAction.class);
-            if (tra == null) continue;
-
-            Object o = tra.getResult();
-            if (o instanceof TestResult) {
-                listener.getLogger().printf("Using build #%d as reference%n", b.getNumber());
-                return (TestResult) o;
+        TestResult results = null;
+        // start with the previous build
+        if (b.getPreviousBuild() != null) {
+            results = findPreviousTestResultPerBranch(b.getPreviousBuild(), listener);
+            if (results != null) {
+                // we found results
+                return results;
             }
         }
+
+        // try to find test results from the primary sibling job, if such one exists
+        Job<?, ?> job = b.getParent();
+        if (isPrimaryBranchJob(job)) {
+            // we only fall back to the primary branch. If we are on that, we have no alternative
+            return null;
+        }
+
+        Run primaryBranchBuild = getLastBuildFromPrimaryBranch(job, listener);
+        if (primaryBranchBuild != null) {
+            listener.getLogger().printf("Scanning primary project for test records. Starting with build %s.%n", primaryBranchBuild);
+            results = findPreviousTestResultPerBranch(primaryBranchBuild, listener);
+        }
+        return results;
+    }
+
+    private static TestResult findPreviousTestResultPerBranch(Run<?, ?> b, TaskListener listener) {
+
+        for (int i = 0; i < NUMBER_OF_BUILDS_TO_SEARCH; i++) {// limit the search to a small number to avoid loading too much
+            listener.getLogger().printf("Investigating build #%d as reference%n", b.getNumber());
+            if (RESULTS_OF_BUILDS_TO_CONSIDER.contains(b.getResult())) {
+                AbstractTestResultAction tra = b.getAction(AbstractTestResultAction.class);
+                if (tra != null) {
+                    Object o = tra.getResult();
+                    if (o instanceof TestResult) {
+                        listener.getLogger().printf("Using build #%d as reference%n", b.getNumber());
+                        return (TestResult) o;
+                    }
+                }
+            }
+            b = b.getPreviousBuild();
+            if (b == null) break;
+        }
+
         return null;    // couldn't find it
+    }
+
+    /**
+     * Returns the last build from the sibling job with the {@link jenkins.scm.api.metadata.PrimaryInstanceMetadataAction},
+     * if this is a multi-branch project.
+     *
+     * This information provided by some of the SCM plugins and mark one or more "default" branches, i.e., usually
+     * "master" in terms of Git SCM.
+     *
+     */
+    private static Run<?, ?> getLastBuildFromPrimaryBranch(Job<?, ?> job, TaskListener listener) {
+        // Folder contains jobs for all branches in case of MultiBranchProjects
+        if (!(job.getParent() instanceof MultiBranchProject)) {
+            listener.getLogger().println("Parent folder is not a MultiBranchProject");
+            return null;
+        }
+        // cast folder to MultiBranchProject
+        MultiBranchProject<?, ?> folder = (MultiBranchProject<?, ?>) job.getParent();
+        Job primaryBranchJob = findPrimaryBranch(folder);
+        if (primaryBranchJob == null) {
+            listener.getLogger().println("Could not find a primary branch to use as fallback");
+            return null;
+        }
+        return primaryBranchJob.getLastBuild();
+    }
+
+    /**
+     * Checks if the current job has {@link jenkins.scm.api.metadata.PrimaryInstanceMetadataAction} assigned.
+     */
+    private static boolean isPrimaryBranchJob(Job<?, ?> job) {
+        PrimaryInstanceMetadataAction action = job.getAction(PrimaryInstanceMetadataAction.class);
+        return action != null;
+    }
+
+    /**
+     * Returns the primary branch of a multi-branch project, denoted by {@link jenkins.scm.api.metadata.PrimaryInstanceMetadataAction}.
+     */
+    private static Job<?, ?> findPrimaryBranch(MultiBranchProject<?, ?> folder) {
+        return folder.getItems().stream().filter(j -> j.getAction(PrimaryInstanceMetadataAction.class) != null).findFirst().orElse(null);
     }
 
     @Extension
