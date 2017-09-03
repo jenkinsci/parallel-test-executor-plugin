@@ -1,5 +1,13 @@
 @Library('testInParallel') _
 
+properties([
+    parameters([
+        string(name: 'MULTIPLIER', defaultValue: '1', description: 'Factor by which to artificially slow down tests.'),
+        string(name: 'SPLIT', defaultValue: '5', description: 'Number of buckets to split tests into.')
+    ]),
+    realTimeJUnitReports()
+])
+
 stage('Sources') {
   node {
     checkout scm
@@ -8,11 +16,13 @@ stage('Sources') {
 }
 
 stage('Testing') {
-  testInParallel(count(5), 'inclusions.txt', 'exclusions.txt', 'target/surefire-reports/TEST-*.xml', 'maven:3.3.9-jdk-8', {
+  testInParallel(count(Integer.parseInt(params.SPLIT)), 'inclusions.txt', 'exclusions.txt', 'target/surefire-reports/TEST-*.xml', 'maven:3.5.0-jdk-8', {
     unstash 'sources'
   }, {
     configFileProvider([configFile(fileId: 'jenkins-mirror', variable: 'SETTINGS')]) {
-      sh 'mvn -s $SETTINGS -B clean test -Dmaven.test.failure.ignore'
+      withEnv(["MULTIPLIER=$params.MULTIPLIER"]) {
+        sh 'mvn -s $SETTINGS -B clean test -Dmaven.test.failure.ignore'
+      }
     }
   })
 }
