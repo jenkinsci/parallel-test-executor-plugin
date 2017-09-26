@@ -4,8 +4,7 @@ properties([
     parameters([
         string(name: 'MULTIPLIER', defaultValue: '1', description: 'Factor by which to artificially slow down tests.'),
         string(name: 'SPLIT', defaultValue: '5', description: 'Number of buckets to split tests into.')
-    ]),
-    realTimeJUnitReports()
+    ])
 ])
 
 stage('Sources') {
