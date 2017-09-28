@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jenkinsci.plugins.parallel_test_executor.Test5" time="110.00" tests="20" errors="0" skipped="0" failures="0">
+  <testcase name="test5Case1" classname="org.jenkinsci.plugins.parallel_test_executor.Test5" time="1.00"/>
+  <testcase name="test5Case2" classname="org.jenkinsci.plugins.parallel_test_executor.Test5" time="2.00"/>
+  <testcase name="test5Case3" classname="org.jenkinsci.plugins.parallel_test_executor.Test5" time="3.00"/>
+  <testcase name="test5Case4" classname="org.jenkinsci.plugins.parallel_test_executor.Test5" time="4.00"/>
+  <testcase name="test5Case5" classname="org.jenkinsci.plugins.parallel_test_executor.Test5" time="5.00"/>
+  <testcase name="test5Case6" classname="org.jenkinsci.plugins.parallel_test_executor.Test5" time="6.00"/>
+  <testcase name="test5Case7" classname="org.jenkinsci.plugins.parallel_test_executor.Test5" time="7.00"/>
+  <testcase name="test5Case8" classname="org.jenkinsci.plugins.parallel_test_executor.Test5" time="8.00"/>
+  <testcase name="test5Case9" classname="org.jenkinsci.plugins.parallel_test_executor.Test5" time="9.00"/>
+  <testcase name="test5Case10" classname="org.jenkinsci.plugins.parallel_test_executor.Test5" time="10.00"/>
+  <testcase name="test5Case11" classname="org.jenkinsci.plugins.parallel_test_executor.Test5" time="1.00"/>
+  <testcase name="test5Case12" classname="org.jenkinsci.plugins.parallel_test_executor.Test5" time="2.00"/>
+  <testcase name="test5Case13" classname="org.jenkinsci.plugins.parallel_test_executor.Test5" time="3.00"/>
+  <testcase name="test5Case14" classname="org.jenkinsci.plugins.parallel_test_executor.Test5" time="4.00"/>
+  <testcase name="test5Case15" classname="org.jenkinsci.plugins.parallel_test_executor.Test5" time="5.00"/>
+  <testcase name="test5Case16" classname="org.jenkinsci.plugins.parallel_test_executor.Test5" time="6.00"/>
+  <testcase name="test5Case17" classname="org.jenkinsci.plugins.parallel_test_executor.Test5" time="7.00"/>
+  <testcase name="test5Case18" classname="org.jenkinsci.plugins.parallel_test_executor.Test5" time="8.00"/>
+  <testcase name="test5Case19" classname="org.jenkinsci.plugins.parallel_test_executor.Test5" time="9.00"/>
+  <testcase name="test5Case20" classname="org.jenkinsci.plugins.parallel_test_executor.Test5" time="10.22"/>
+</testsuite>

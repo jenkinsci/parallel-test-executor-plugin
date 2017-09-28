@@ -20,9 +20,9 @@ public class TimeDrivenParallelism extends Parallelism {
     }
 
     @Override
-    public int calculate(List<TestClass> tests) {
+    public int calculate(List<TestEntity> tests) {
         long total=0;
-        for (TestClass test : tests) {
+        for (TestEntity test : tests) {
             total += test.duration;
         }
         long chunk = TimeUnit2.MINUTES.toMillis(mins);

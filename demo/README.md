@@ -16,3 +16,8 @@ and then go to: http://localhost:8080/
 
 Run one build of `pipeline » master`—all 400 tests will be run on one slave, which is slow.
 Run a second build and you will see the load split across five slaves running 80 tests apiece.
+
+`pipeline-pytest` is a self-contained Pipeline project. It contains a single file containing 100 test cases.
+
+Run one build of `pytest » master`—all 100 test cases in its single test class/file will be run on one slave.
+Run a second build and you will see the load split across five slaves running 20 test cases apiece.

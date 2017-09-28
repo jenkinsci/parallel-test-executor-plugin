@@ -23,6 +23,7 @@ public final class SplitStep extends AbstractStepImpl {
     private final Parallelism parallelism;
 
     private boolean generateInclusions;
+    private TestMode testMode;
 
     @DataBoundConstructor public SplitStep(Parallelism parallelism) {
         this.parallelism = parallelism;
@@ -37,6 +38,19 @@ public final class SplitStep extends AbstractStepImpl {
     @DataBoundSetter
     public void setGenerateInclusions(boolean generateInclusions) {
         this.generateInclusions = generateInclusions;
+    }
+    
+    public TestMode getTestMode() {
+        if (testMode == null) {
+            return TestMode.JAVA;
+        } else {
+            return testMode;
+        }
+    }
+    
+    @DataBoundSetter
+    public void setTestMode(TestMode testMode) {
+        this.testMode = testMode;
     }
 
     @Extension public static final class DescriptorImpl extends AbstractStepDescriptorImpl {
@@ -65,10 +79,10 @@ public final class SplitStep extends AbstractStepImpl {
 
         @Override protected List<?> run() throws Exception {
             if (step.generateInclusions) {
-                return ParallelTestExecutor.findTestSplits(step.parallelism, build, listener, step.generateInclusions);
+                return ParallelTestExecutor.findTestSplits(step.parallelism, build, listener, step.generateInclusions, step.getTestMode());
             } else {
                 List<List<String>> result = new ArrayList<>();
-                for (InclusionExclusionPattern pattern : ParallelTestExecutor.findTestSplits(step.parallelism, build, listener, step.generateInclusions)) {
+                for (InclusionExclusionPattern pattern : ParallelTestExecutor.findTestSplits(step.parallelism, build, listener, step.generateInclusions, step.getTestMode())) {
                     result.add(pattern.getList());
                 }
                 return result;
