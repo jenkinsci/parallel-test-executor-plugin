@@ -144,7 +144,10 @@ public class ParallelTestExecutor extends Builder {
     }
 
     static List<InclusionExclusionPattern> findTestSplits(Parallelism parallelism, Run<?,?> build, TaskListener listener, boolean generateInclusions) {
-        TestResult tr = findPreviousTestResult(build, listener);
+        TestResult tr = findPreviousTestResult(build, listener, true);
+        if (tr == null) {
+            tr = findPreviousTestResult(build, listener, false);
+        }
         if (tr == null) {
             listener.getLogger().println("No record available, so executing everything in one place");
             return Collections.singletonList(new InclusionExclusionPattern(Collections.<String>emptyList(), false));
@@ -278,14 +281,20 @@ public class ParallelTestExecutor extends Builder {
         }
     }
 
-    private static TestResult findPreviousTestResult(Run<?, ?> b, TaskListener listener) {
+    private static TestResult findPreviousTestResult(Run<?, ?> b, TaskListener listener, boolean checkStatus) {
         for (int i = 0; i < NUMBER_OF_BUILDS_TO_SEARCH; i++) {// limit the search to a small number to avoid loading too much
             b = b.getPreviousBuild();
             if (b == null) break;
-            if(!RESULTS_OF_BUILDS_TO_CONSIDER.contains(b.getResult())) continue;
+            if (checkStatus && !RESULTS_OF_BUILDS_TO_CONSIDER.contains(b.getResult())) {
+                listener.getLogger().printf("Ignoring build #%d since it was not successful%n", b.getNumber());
+                continue;
+            }
 
             AbstractTestResultAction tra = b.getAction(AbstractTestResultAction.class);
-            if (tra == null) continue;
+            if (tra == null) {
+                listener.getLogger().printf("Ignoring build #%d since it had no test results%n", b.getNumber());
+                continue;
+            }
 
             Object o = tra.getResult();
             if (o instanceof TestResult) {

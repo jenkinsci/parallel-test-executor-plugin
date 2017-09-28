@@ -8,7 +8,6 @@ import hudson.tasks.test.AbstractTestResultAction;
 import org.apache.tools.ant.DirectoryScanner;
 import org.hamcrest.Matchers;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -21,15 +20,8 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeThat;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -42,9 +34,13 @@ public class ParallelTestExecutorUnitTest {
 
     @Mock Run<?, ?> previousBuild;
 
+    @Mock Run<?, ?> newBuild;
+
     @Mock TaskListener listener;
 
     @Mock AbstractTestResultAction action;
+
+    @Mock AbstractTestResultAction action2;
 
     @Rule public TestName name = new TestName();
 
@@ -53,8 +49,7 @@ public class ParallelTestExecutorUnitTest {
     DirectoryScanner scanner;
 
 
-    @Before
-    public void setUp() throws Exception {
+    private void simpleSetUp() throws Exception {
         when(build.getPreviousBuild()).thenReturn((Run)previousBuild);
         when(previousBuild.getResult()).thenReturn(Result.SUCCESS);
         when(listener.getLogger()).thenReturn(System.err);
@@ -64,7 +59,7 @@ public class ParallelTestExecutorUnitTest {
     @Before
     public void findProjectRoot() throws Exception {
         URL url = getClass().getResource(getClass().getSimpleName() + "/" + this.name.getMethodName());
-        assumeThat("The test resource for " + this.name.getMethodName() + " exist", url, Matchers.notNullValue());
+        assertThat("The test resource for " + this.name.getMethodName() + " exists", url, Matchers.notNullValue());
         try {
             projectRootDir = new File(url.toURI());
         } catch (URISyntaxException e) {
@@ -73,10 +68,12 @@ public class ParallelTestExecutorUnitTest {
         scanner = new DirectoryScanner();
         scanner.setBasedir(projectRootDir);
         scanner.scan();
+        assertThat(scanner.getIncludedFiles(), Matchers.not(Matchers.emptyArray()));
     }
 
     @Test
     public void findTestSplits() throws Exception {
+        simpleSetUp();
         TestResult testResult = new TestResult(0L, scanner, false);
         testResult.tally();
         when(action.getResult()).thenReturn(testResult);
@@ -90,7 +87,38 @@ public class ParallelTestExecutorUnitTest {
     }
 
     @Test
+    public void findSplitsAfterAbort() throws Exception {
+        // No good build to check.
+        when(previousBuild.getNumber()).thenReturn(1);
+        when(build.getNumber()).thenReturn(2);
+        when(build.getPreviousBuild()).thenReturn((Run)previousBuild);
+        when(previousBuild.getResult()).thenReturn(Result.ABORTED);
+        when(listener.getLogger()).thenReturn(System.err);
+        when(previousBuild.getAction(eq(AbstractTestResultAction.class))).thenReturn(action);
+        TestResult testResult = new TestResult(0L, scanner, false);
+        testResult.tally();
+        when(action.getResult()).thenReturn(testResult);
+        List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(new CountDrivenParallelism(5), build, listener, false);
+        assertEquals(5, splits.size());
+        assertThat(splits.get(0).getList(), Matchers.not(Matchers.empty()));
+        // Ignore intermediate bad builds.
+        when(newBuild.getNumber()).thenReturn(3);
+        when(previousBuild.getResult()).thenReturn(Result.SUCCESS);
+        when(previousBuild.getAction(eq(AbstractTestResultAction.class))).thenReturn(action);
+        when(build.getResult()).thenReturn(Result.ABORTED);
+        TestResult empty = new TestResult();
+        empty.tally();
+        when(action2.getResult()).thenReturn(empty);
+        when(build.getAction(eq(AbstractTestResultAction.class))).thenReturn(action2);
+        when(newBuild.getPreviousBuild()).thenReturn((Run)build);
+        splits = ParallelTestExecutor.findTestSplits(new CountDrivenParallelism(5), newBuild, listener, false);
+        assertEquals(5, splits.size());
+        assertThat(splits.get(0).getList(), Matchers.not(Matchers.empty()));
+    }
+
+    @Test
     public void findTestSplitsInclusions() throws Exception {
+        simpleSetUp();
         TestResult testResult = new TestResult(0L, scanner, false);
         testResult.tally();
         when(action.getResult()).thenReturn(testResult);
