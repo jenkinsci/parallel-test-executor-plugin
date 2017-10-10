@@ -13,10 +13,9 @@ def call(parallelism, inclusionsFile, exclusionsFile, results, image, prepare, r
             writeFile file: (split.includes ? exclusionsFile : inclusionsFile), text: ''
           }
           stage('Main') {
-            run()
-          }
-          stage('Reporting') {
-            junit results
+            realtimeJUnit(results) {
+              run()
+            }
           }
         }
       }

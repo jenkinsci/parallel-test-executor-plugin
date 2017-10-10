@@ -1,22 +1,17 @@
-TAG=$(shell perl -n -e 'if (/parallel-test-executor:(.+)/) {print $$1}' plugins.txt)
+TAG=$(shell date -I -u)
 IMAGE=jenkinsci/parallel-test-executor-demo
 DOCKER_RUN=docker run --rm -p 127.0.0.1:8080:8080 -v m2repo:/m2repo -v $(shell which docker):/usr/bin/docker -v /var/run/docker.sock:/var/run/docker.sock --group-add=$(shell stat -c %g /var/run/docker.sock) -ti
 
 copy-plugins:
-	set -e; \
-	rm -rf plugins; \
-	mkdir plugins; \
-	for gav in `cat plugins.txt`; do \
-	  g=`echo $$gav | cut -f1 -d: | perl -pe 's{[.]}{/}g'`; \
-	  a=`echo $$gav | cut -f2 -d:`; \
-	  v=`echo $$gav | cut -f3 -d:`; \
-	  hpi=$$HOME/.m2/repository/$$g/$$a/$$v/$$a-$$v.hpi; \
-	  if [ \! -f $$hpi ]; then \
-	    mvn -U org.apache.maven.plugins:maven-dependency-plugin:2.5.1:get -Dartifact=$$gav:hpi -Dtransitive=false ||\
-	      (locate $$a-$$v.hpi | fgrep .m2/repository/; false); \
-	  fi; \
-	  cp -v $$hpi plugins/$$a.jpi; \
-	done
+	if [ \! -f ../target/parallel-test-executor.hpi ]; then mvn -f .. -DskipTests install; fi
+	if [ \! -f target/test-classes/test-dependencies/index -o \
+	     pom.xml -nt target/test-classes/test-dependencies/index -o \
+	     ../target/parallel-test-executor.hpi -nt target/test-classes/test-dependencies/parallel-test-executor.hpi ]; then \
+	    mvn clean validate hpi:resolve-test-dependencies; fi
+	# TODO would be more efficient to move Dockerfile and all it references into a subdirectory, since docker-build lacks an --excludes
+	rm -rf plugins
+	mkdir plugins
+	cp -v target/test-classes/test-dependencies/*.hpi plugins
 
 build: copy-plugins
 	docker build -t $(IMAGE):$(TAG) .
