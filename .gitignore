@@ -1,7 +1,7 @@
 # Maven
-/target
+target
 # Jenkins
-/work
+work
 
 # IntelliJ project files 
 *.iml
