@@ -77,11 +77,11 @@ public final class SplitStep extends AbstractStepImpl {
         @Override protected List<?> run() throws Exception {
             if (step.generateInclusions) {
                 return ParallelTestExecutor.findTestSplits(step.parallelism, build, listener, step.generateInclusions,
-                        new PreviousTestResultLookup.LookupInStage(step.stage));
+                        step.stage);
             } else {
                 List<List<String>> result = new ArrayList<>();
                 for (InclusionExclusionPattern pattern : ParallelTestExecutor.findTestSplits(step.parallelism, build, listener,
-                        step.generateInclusions, new PreviousTestResultLookup.LookupInStage(step.stage))) {
+                        step.generateInclusions, step.stage)) {
                     result.add(pattern.getList());
                 }
                 return result;

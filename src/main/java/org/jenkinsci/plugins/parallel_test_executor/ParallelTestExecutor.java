@@ -1,5 +1,6 @@
 package org.jenkinsci.plugins.parallel_test_executor;
 
+import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.AbortException;
@@ -16,6 +17,14 @@ import hudson.tasks.junit.JUnitResultArchiver;
 import hudson.tasks.test.AbstractTestResultAction;
 import hudson.tasks.test.TabulatedResult;
 import hudson.tasks.test.TestResult;
+import org.jenkinsci.plugins.workflow.actions.LabelAction;
+import org.jenkinsci.plugins.workflow.flow.FlowExecution;
+import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner;
+import org.jenkinsci.plugins.workflow.graph.BlockStartNode;
+import org.jenkinsci.plugins.workflow.graph.FlowNode;
+import org.jenkinsci.plugins.workflow.graph.StepNode;
+import org.jenkinsci.plugins.workflow.graphanalysis.DepthFirstScanner;
+import org.jenkinsci.plugins.workflow.steps.StepDescriptor;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -146,71 +155,100 @@ public class ParallelTestExecutor extends Builder {
 
     static List<InclusionExclusionPattern> findTestSplits(Parallelism parallelism, Run<?,?> build, TaskListener listener,
                                                           boolean generateInclusions,
-                                                          @CheckForNull final PreviousTestResultLookup lookup) {
+                                                          @CheckForNull final String stageName) {
         TestResult tr = findPreviousTestResult(build, listener);
         if (tr == null) {
             listener.getLogger().println("No record available, so executing everything in one place");
             return Collections.singletonList(new InclusionExclusionPattern(Collections.<String>emptyList(), false));
-        } else if (lookup != null) {
-            tr = lookup.lookupTestResult(tr);
-        }
+        } else {
+            Run<?,?> prevRun = tr.getRun();
+            if (prevRun instanceof FlowExecutionOwner.Executable && stageName != null) {
+                FlowExecutionOwner owner = ((FlowExecutionOwner.Executable)prevRun).asFlowExecutionOwner();
+                if (owner != null) {
+                    FlowExecution execution = owner.getOrNull();
+                    if (execution != null) {
+                        DepthFirstScanner scanner = new DepthFirstScanner();
+                        FlowNode stageId = scanner.findFirstMatch(execution, new Predicate<FlowNode>() {
+                            @Override
+                            public boolean apply(@CheckForNull FlowNode input) {
+                                if (input instanceof BlockStartNode &&
+                                        input instanceof StepNode) {
+                                    StepDescriptor descriptor = ((StepNode)input).getDescriptor();
+                                    LabelAction label = input.getPersistentAction(LabelAction.class);
 
-        Map<String/*fully qualified class name*/, TestClass> data = new TreeMap<>();
-        collect(tr, data);
+                                    return descriptor != null &&
+                                            descriptor.getFunctionName().equals("stage") &&
+                                            label != null &&
+                                            stageName.equals(label.getDisplayName());
+                                }
+                                return false;
+                            }
+                        });
+                        if (stageId != null) {
+                            tr = ((hudson.tasks.junit.TestResult) tr).getResultForPipelineBlock(stageId.getId());
+                        }
 
-        // sort in the descending order of the duration
-        List<TestClass> sorted = new ArrayList<>(data.values());
-        Collections.sort(sorted);
-
-        // degree of the parallelism. we need minimum 1
-        final int n = Math.max(1, parallelism.calculate(sorted));
-
-        List<Knapsack> knapsacks = new ArrayList<>(n);
-        for (int i = 0; i < n; i++)
-            knapsacks.add(new Knapsack());
-
-        /*
-           This packing problem is a NP-complete problem, so we solve
-           this simply by a greedy algorithm. We pack heavier items first,
-           and the result should be of roughly equal size
-        */
-        PriorityQueue<Knapsack> q = new PriorityQueue<>(knapsacks);
-        for (TestClass d : sorted) {
-            Knapsack k = q.poll();
-            k.add(d);
-            q.add(k);
-        }
-
-        long total = 0, min = Long.MAX_VALUE, max = Long.MIN_VALUE;
-        for (Knapsack k : knapsacks) {
-            total += k.total;
-            max = Math.max(max, k.total);
-            min = Math.min(min, k.total);
-        }
-        long average = total / n;
-        long variance = 0;
-        for (Knapsack k : knapsacks) {
-            variance += pow(k.total - average);
-        }
-        variance /= n;
-        long stddev = (long) Math.sqrt(variance);
-        listener.getLogger().printf("%d test classes (%dms) divided into %d sets. Min=%dms, Average=%dms, Max=%dms, stddev=%dms%n",
-                data.size(), total, n, min, average, max, stddev);
-
-        List<InclusionExclusionPattern> r = new ArrayList<>();
-        for (int i = 0; i < n; i++) {
-            Knapsack k = knapsacks.get(i);
-            boolean shouldIncludeElements = generateInclusions && i != 0;
-            List<String> elements = new ArrayList<>();
-            r.add(new InclusionExclusionPattern(elements, shouldIncludeElements));
-            for (TestClass d : sorted) {
-                if (shouldIncludeElements == (d.knapsack == k)) {
-                    elements.add(d.getSourceFileName(".java"));
-                    elements.add(d.getSourceFileName(".class"));
+                    }
                 }
             }
+
+            Map<String/*fully qualified class name*/, TestClass> data = new TreeMap<>();
+            collect(tr, data);
+
+            // sort in the descending order of the duration
+            List<TestClass> sorted = new ArrayList<>(data.values());
+            Collections.sort(sorted);
+
+            // degree of the parallelism. we need minimum 1
+            final int n = Math.max(1, parallelism.calculate(sorted));
+
+            List<Knapsack> knapsacks = new ArrayList<>(n);
+            for (int i = 0; i < n; i++)
+                knapsacks.add(new Knapsack());
+
+            /*
+               This packing problem is a NP-complete problem, so we solve
+               this simply by a greedy algorithm. We pack heavier items first,
+               and the result should be of roughly equal size
+            */
+            PriorityQueue<Knapsack> q = new PriorityQueue<>(knapsacks);
+            for (TestClass d : sorted) {
+                Knapsack k = q.poll();
+                k.add(d);
+                q.add(k);
+            }
+
+            long total = 0, min = Long.MAX_VALUE, max = Long.MIN_VALUE;
+            for (Knapsack k : knapsacks) {
+                total += k.total;
+                max = Math.max(max, k.total);
+                min = Math.min(min, k.total);
+            }
+            long average = total / n;
+            long variance = 0;
+            for (Knapsack k : knapsacks) {
+                variance += pow(k.total - average);
+            }
+            variance /= n;
+            long stddev = (long) Math.sqrt(variance);
+            listener.getLogger().printf("%d test classes (%dms) divided into %d sets. Min=%dms, Average=%dms, Max=%dms, stddev=%dms%n",
+                    data.size(), total, n, min, average, max, stddev);
+
+            List<InclusionExclusionPattern> r = new ArrayList<>();
+            for (int i = 0; i < n; i++) {
+                Knapsack k = knapsacks.get(i);
+                boolean shouldIncludeElements = generateInclusions && i != 0;
+                List<String> elements = new ArrayList<>();
+                r.add(new InclusionExclusionPattern(elements, shouldIncludeElements));
+                for (TestClass d : sorted) {
+                    if (shouldIncludeElements == (d.knapsack == k)) {
+                        elements.add(d.getSourceFileName(".java"));
+                        elements.add(d.getSourceFileName(".class"));
+                    }
+                }
+            }
+            return r;
         }
-        return r;
     }
 
     /**
