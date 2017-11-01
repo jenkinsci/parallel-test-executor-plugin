@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.io.Charsets;
 
 import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
 
 /**
  * @author Kohsuke Kawaguchi
@@ -168,22 +169,7 @@ public class ParallelTestExecutor extends Builder {
                     FlowExecution execution = owner.getOrNull();
                     if (execution != null) {
                         DepthFirstScanner scanner = new DepthFirstScanner();
-                        FlowNode stageId = scanner.findFirstMatch(execution, new Predicate<FlowNode>() {
-                            @Override
-                            public boolean apply(@CheckForNull FlowNode input) {
-                                if (input instanceof BlockStartNode &&
-                                        input instanceof StepNode) {
-                                    StepDescriptor descriptor = ((StepNode)input).getDescriptor();
-                                    LabelAction label = input.getPersistentAction(LabelAction.class);
-
-                                    return descriptor != null &&
-                                            descriptor.getFunctionName().equals("stage") &&
-                                            label != null &&
-                                            stageName.equals(label.getDisplayName());
-                                }
-                                return false;
-                            }
-                        });
+                        FlowNode stageId = scanner.findFirstMatch(execution, new StageNodeFinderPredicate(stageName));
                         if (stageId != null) {
                             tr = ((hudson.tasks.junit.TestResult) tr).getResultForPipelineBlock(stageId.getId());
                         }
@@ -352,6 +338,29 @@ public class ParallelTestExecutor extends Builder {
         @Override
         public String getDisplayName() {
             return "Parallel test job execution";
+        }
+    }
+
+    public static class StageNodeFinderPredicate implements Predicate<FlowNode> {
+        private final String stageName;
+
+        public StageNodeFinderPredicate(@Nonnull String stageName) {
+            this.stageName = stageName;
+        }
+
+        @Override
+        public boolean apply(@CheckForNull FlowNode input) {
+            if (input instanceof BlockStartNode &&
+                    input instanceof StepNode) {
+                StepDescriptor descriptor = ((StepNode)input).getDescriptor();
+                LabelAction label = input.getPersistentAction(LabelAction.class);
+
+                return descriptor != null &&
+                        descriptor.getFunctionName().equals("stage") &&
+                        label != null &&
+                        stageName.equals(label.getDisplayName());
+            }
+            return false;
         }
     }
 }
