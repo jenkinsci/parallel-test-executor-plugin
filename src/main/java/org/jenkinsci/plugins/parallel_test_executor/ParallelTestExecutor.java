@@ -207,10 +207,10 @@ public class ParallelTestExecutor extends Builder {
                 knapsacks.add(new Knapsack());
 
             /*
-               This packing problem is a NP-complete problem, so we solve
-               this simply by a greedy algorithm. We pack heavier items first,
-               and the result should be of roughly equal size
-            */
+                This packing problem is a NP-complete problem, so we solve
+                this simply by a greedy algorithm. We pack heavier items first,
+                and the result should be of roughly equal size
+             */
             PriorityQueue<Knapsack> q = new PriorityQueue<>(knapsacks);
             for (TestClass d : sorted) {
                 Knapsack k = q.poll();
