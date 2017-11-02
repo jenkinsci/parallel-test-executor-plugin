@@ -1,6 +1,7 @@
 package org.jenkinsci.plugins.parallel_test_executor;
 
 import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableSet;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.AbortException;
@@ -20,11 +21,11 @@ import hudson.tasks.test.TestResult;
 import org.jenkinsci.plugins.workflow.actions.LabelAction;
 import org.jenkinsci.plugins.workflow.flow.FlowExecution;
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner;
-import org.jenkinsci.plugins.workflow.graph.BlockStartNode;
 import org.jenkinsci.plugins.workflow.graph.FlowNode;
-import org.jenkinsci.plugins.workflow.graph.StepNode;
 import org.jenkinsci.plugins.workflow.graphanalysis.DepthFirstScanner;
-import org.jenkinsci.plugins.workflow.steps.StepDescriptor;
+import org.jenkinsci.plugins.workflow.graphanalysis.FlowScanningUtils;
+import org.jenkinsci.plugins.workflow.graphanalysis.NodeDisplayNamePredicate;
+import org.jenkinsci.plugins.workflow.graphanalysis.NodeStepTypePredicate;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -169,7 +170,7 @@ public class ParallelTestExecutor extends Builder {
                     FlowExecution execution = owner.getOrNull();
                     if (execution != null) {
                         DepthFirstScanner scanner = new DepthFirstScanner();
-                        FlowNode stageId = scanner.findFirstMatch(execution, new StageNodeFinderPredicate(stageName));
+                        FlowNode stageId = scanner.findFirstMatch(execution, stageNamePredicate(stageName));
                         if (stageId != null) {
                             tr = ((hudson.tasks.junit.TestResult) tr).getResultForPipelineBlock(stageId.getId());
                         }
@@ -341,26 +342,10 @@ public class ParallelTestExecutor extends Builder {
         }
     }
 
-    public static class StageNodeFinderPredicate implements Predicate<FlowNode> {
-        private final String stageName;
-
-        public StageNodeFinderPredicate(@Nonnull String stageName) {
-            this.stageName = stageName;
-        }
-
-        @Override
-        public boolean apply(@CheckForNull FlowNode input) {
-            if (input instanceof BlockStartNode &&
-                    input instanceof StepNode) {
-                StepDescriptor descriptor = ((StepNode)input).getDescriptor();
-                LabelAction label = input.getPersistentAction(LabelAction.class);
-
-                return descriptor != null &&
-                        descriptor.getFunctionName().equals("stage") &&
-                        label != null &&
-                        stageName.equals(label.getDisplayName());
-            }
-            return false;
-        }
+    static Predicate<FlowNode> stageNamePredicate(@Nonnull String stageName) {
+        // Arrays.asList in to prevent compiler warning due to unchecked generics/varargs whackiness.
+        return Predicates.and(Arrays.asList(new NodeStepTypePredicate("stage"),
+                FlowScanningUtils.hasActionPredicate(LabelAction.class),
+                new NodeDisplayNamePredicate(stageName)));
     }
 }
