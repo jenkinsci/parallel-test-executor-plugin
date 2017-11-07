@@ -10,12 +10,12 @@ properties([
 stage('Sources') {
   node {
     checkout scm
-    stash name: 'sources', excludes: 'Jenkinsfile,target/'
+    stash name: 'sources', excludes: 'Jenkinsfile,hello/target/,goodbye/target/'
   }
 }
 
 stage('Testing Hello') {
-  testInParallel(count(Integer.parseInt(params.SPLIT)), 'inclusions.txt', 'exclusions.txt',
+  testInParallel(count(Integer.parseInt(params.SPLIT)), 'hello/inclusions.txt', 'hello/exclusions.txt',
       'target/surefire-reports/TEST-*.xml', 'maven:3.5.0-jdk-8', "Testing Hello", {
     unstash 'sources'
   }, {
@@ -29,7 +29,7 @@ stage('Testing Hello') {
 }
 
 stage('Testing Goodbye') {
-  testInParallel(count(Integer.parseInt(params.SPLIT)), 'inclusions.txt', 'exclusions.txt',
+  testInParallel(count(Integer.parseInt(params.SPLIT)), 'goodbye/inclusions.txt', 'goodbye/exclusions.txt',
       'target/surefire-reports/TEST-*.xml', 'maven:3.5.0-jdk-8', "Testing Goodbye", {
     unstash 'sources'
   }, {
