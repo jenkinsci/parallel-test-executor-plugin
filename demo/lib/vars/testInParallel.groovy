@@ -1,5 +1,5 @@
-def call(parallelism, inclusionsFile, exclusionsFile, results, image, prepare, run) {
-  def splits = splitTests parallelism: parallelism, generateInclusions: true
+def call(parallelism, inclusionsFile, exclusionsFile, results, image, stage, prepare, run) {
+  def splits = splitTests parallelism: parallelism, generateInclusions: true, stage: stage
   def branches = [:]
   for (int i = 0; i < splits.size(); i++) {
     def num = i
