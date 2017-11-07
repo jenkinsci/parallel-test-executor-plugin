@@ -1,7 +1,8 @@
 #!/bin/bash
-mkdir -p src/test/java/foo
+mkdir -p hello/src/test/java/foo
+mkdir -p goodbye/src/test/java/foo
 for i in {00..99}; do
-cat > src/test/java/foo/Hello${i}Test.java << EOF
+cat > hello/src/test/java/foo/Hello${i}Test.java << EOF
 package foo;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -26,7 +27,7 @@ public class Hello${i}Test {
     }
 }
 EOF
-cat > src/test/java/foo/Goodbye${i}Test.java << EOF
+cat > goodbye/src/test/java/foo/Goodbye${i}Test.java << EOF
 package foo;
 import org.junit.Test;
 import static org.junit.Assert.*;

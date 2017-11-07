@@ -1,5 +1,5 @@
-def call(parallelism, inclusionsFile, exclusionsFile, results, image, stage, prepare, run) {
-  def splits = splitTests parallelism: parallelism, generateInclusions: true, stage: stage
+def call(parallelism, inclusionsFile, exclusionsFile, results, image, stageName, prepare, run) {
+  def splits = splitTests parallelism: parallelism, generateInclusions: true, stage: stageName
   def branches = [:]
   for (int i = 0; i < splits.size(); i++) {
     def num = i
@@ -13,9 +13,7 @@ def call(parallelism, inclusionsFile, exclusionsFile, results, image, stage, pre
             writeFile file: (split.includes ? exclusionsFile : inclusionsFile), text: ''
           }
           stage('Main') {
-            realtimeJUnit(results) {
-              run()
-            }
+            run()
           }
         }
       }
