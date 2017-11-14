@@ -171,7 +171,7 @@ public class ParallelTestExecutor extends Builder {
                     FlowExecution execution = owner.getOrNull();
                     if (execution != null) {
                         DepthFirstScanner scanner = new DepthFirstScanner();
-                        FlowNode stageId = scanner.findFirstMatch(execution, stageNamePredicate(stageName));
+                        FlowNode stageId = scanner.findFirstMatch(execution, new StageNamePredicate(stageName));
                         if (stageId != null) {
                             tr = ((hudson.tasks.junit.TestResult) tr).getResultForPipelineBlock(stageId.getId());
                         }
@@ -343,18 +343,18 @@ public class ParallelTestExecutor extends Builder {
         }
     }
 
-    static Predicate<FlowNode> stageNamePredicate(@Nonnull final String stageName) {
-        // Arrays.asList in to prevent compiler warning due to unchecked generics/varargs whackiness.
-        return Predicates.and(Arrays.asList(new NodeStepTypePredicate("stage"),
-                new Predicate<FlowNode>() {
-                    @Override
-                    public boolean apply(@Nullable FlowNode input) {
-                        if (input != null) {
-                            LabelAction labelAction = input.getAction(LabelAction.class);
-                            return labelAction != null && stageName.equals(labelAction.getDisplayName());
-                        }
-                        return false;
-                    }
-                }));
+    private static class StageNamePredicate implements Predicate<FlowNode> {
+        private final String stageName;
+        public StageNamePredicate(@Nonnull String stageName) {
+            this.stageName = stageName;
+        }
+        @Override
+        public boolean apply(@Nullable FlowNode input) {
+            if (input != null) {
+                LabelAction labelAction = input.getPersistentAction(LabelAction.class);
+                return labelAction != null && stageName.equals(labelAction.getDisplayName());
+            }
+            return false;
+        }
     }
 }
