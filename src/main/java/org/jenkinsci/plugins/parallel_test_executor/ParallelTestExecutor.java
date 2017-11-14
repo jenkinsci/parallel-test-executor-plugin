@@ -41,6 +41,7 @@ import org.apache.commons.io.Charsets;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * @author Kohsuke Kawaguchi
@@ -342,10 +343,18 @@ public class ParallelTestExecutor extends Builder {
         }
     }
 
-    static Predicate<FlowNode> stageNamePredicate(@Nonnull String stageName) {
+    static Predicate<FlowNode> stageNamePredicate(@Nonnull final String stageName) {
         // Arrays.asList in to prevent compiler warning due to unchecked generics/varargs whackiness.
         return Predicates.and(Arrays.asList(new NodeStepTypePredicate("stage"),
-                FlowScanningUtils.hasActionPredicate(LabelAction.class),
-                new NodeDisplayNamePredicate(stageName)));
+                new Predicate<FlowNode>() {
+                    @Override
+                    public boolean apply(@Nullable FlowNode input) {
+                        if (input != null) {
+                            LabelAction labelAction = input.getAction(LabelAction.class);
+                            return labelAction != null && stageName.equals(labelAction.getDisplayName());
+                        }
+                        return false;
+                    }
+                }));
     }
 }
