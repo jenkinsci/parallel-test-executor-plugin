@@ -1,5 +1,7 @@
 package org.jenkinsci.plugins.parallel_test_executor;
 
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableSet;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.AbortException;
@@ -16,6 +18,13 @@ import hudson.tasks.junit.JUnitResultArchiver;
 import hudson.tasks.test.AbstractTestResultAction;
 import hudson.tasks.test.TabulatedResult;
 import hudson.tasks.test.TestResult;
+import org.jenkinsci.plugins.workflow.actions.LabelAction;
+import org.jenkinsci.plugins.workflow.flow.FlowExecution;
+import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner;
+import org.jenkinsci.plugins.workflow.graph.FlowNode;
+import org.jenkinsci.plugins.workflow.graphanalysis.DepthFirstScanner;
+import org.jenkinsci.plugins.workflow.graphanalysis.FlowScanningUtils;
+import org.jenkinsci.plugins.workflow.graphanalysis.NodeStepTypePredicate;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -30,6 +39,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.io.Charsets;
 
 import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * @author Kohsuke Kawaguchi
@@ -122,7 +133,8 @@ public class ParallelTestExecutor extends Builder {
         }
         FilePath dir = workspace.child("test-splits");
         dir.deleteRecursive();
-        List<InclusionExclusionPattern> splits = findTestSplits(parallelism, build, listener, includesPatternFile != null);
+        List<InclusionExclusionPattern> splits = findTestSplits(parallelism, build, listener, includesPatternFile != null,
+                null);
         for (int i = 0; i < splits.size(); i++) {
             InclusionExclusionPattern pattern = splits.get(i);
             try (OutputStream os = dir.child("split." + i + "." + (pattern.isIncludes() ? "include" : "exclude") + ".txt").write();
@@ -143,12 +155,29 @@ public class ParallelTestExecutor extends Builder {
         return true;
     }
 
-    static List<InclusionExclusionPattern> findTestSplits(Parallelism parallelism, Run<?,?> build, TaskListener listener, boolean generateInclusions) {
+    static List<InclusionExclusionPattern> findTestSplits(Parallelism parallelism, Run<?,?> build, TaskListener listener,
+                                                          boolean generateInclusions,
+                                                          @CheckForNull final String stageName) {
         TestResult tr = findPreviousTestResult(build, listener);
         if (tr == null) {
             listener.getLogger().println("No record available, so executing everything in one place");
             return Collections.singletonList(new InclusionExclusionPattern(Collections.<String>emptyList(), false));
         } else {
+            Run<?,?> prevRun = tr.getRun();
+            if (prevRun instanceof FlowExecutionOwner.Executable && stageName != null) {
+                FlowExecutionOwner owner = ((FlowExecutionOwner.Executable)prevRun).asFlowExecutionOwner();
+                if (owner != null) {
+                    FlowExecution execution = owner.getOrNull();
+                    if (execution != null) {
+                        DepthFirstScanner scanner = new DepthFirstScanner();
+                        FlowNode stageId = scanner.findFirstMatch(execution, new StageNamePredicate(stageName));
+                        if (stageId != null) {
+                            tr = ((hudson.tasks.junit.TestResult) tr).getResultForPipelineBlock(stageId.getId());
+                        }
+
+                    }
+                }
+            }
 
             Map<String/*fully qualified class name*/, TestClass> data = new TreeMap<>();
             collect(tr, data);
@@ -310,6 +339,21 @@ public class ParallelTestExecutor extends Builder {
         @Override
         public String getDisplayName() {
             return "Parallel test job execution";
+        }
+    }
+
+    private static class StageNamePredicate implements Predicate<FlowNode> {
+        private final String stageName;
+        public StageNamePredicate(@Nonnull String stageName) {
+            this.stageName = stageName;
+        }
+        @Override
+        public boolean apply(@Nullable FlowNode input) {
+            if (input != null) {
+                LabelAction labelAction = input.getPersistentAction(LabelAction.class);
+                return labelAction != null && stageName.equals(labelAction.getDisplayName());
+            }
+            return false;
         }
     }
 }
