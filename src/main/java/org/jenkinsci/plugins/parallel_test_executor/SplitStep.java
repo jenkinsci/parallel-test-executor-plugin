@@ -2,6 +2,7 @@ package org.jenkinsci.plugins.parallel_test_executor;
 
 import com.google.inject.Inject;
 import hudson.Extension;
+import hudson.FilePath;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 
@@ -75,13 +76,14 @@ public final class SplitStep extends AbstractStepImpl {
         @StepContextParameter private transient TaskListener listener;
 
         @Override protected List<?> run() throws Exception {
+            FilePath path = this.getContext().get(FilePath.class);
             if (step.generateInclusions) {
                 return ParallelTestExecutor.findTestSplits(step.parallelism, build, listener, step.generateInclusions,
-                        step.stage);
+                        step.stage, path);
             } else {
                 List<List<String>> result = new ArrayList<>();
                 for (InclusionExclusionPattern pattern : ParallelTestExecutor.findTestSplits(step.parallelism, build, listener,
-                        step.generateInclusions, step.stage)) {
+                        step.generateInclusions, step.stage, path)) {
                     result.add(pattern.getList());
                 }
                 return result;

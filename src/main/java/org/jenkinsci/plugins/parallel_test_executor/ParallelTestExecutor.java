@@ -18,6 +18,12 @@ import hudson.tasks.junit.JUnitResultArchiver;
 import hudson.tasks.test.AbstractTestResultAction;
 import hudson.tasks.test.TabulatedResult;
 import hudson.tasks.test.TestResult;
+import hudson.util.DirScanner;
+import jenkins.security.MasterToSlaveCallable;
+import org.apache.commons.io.FileUtils;
+import org.apache.tools.ant.DirectoryScanner;
+import org.apache.tools.ant.FileScanner;
+import org.apache.tools.ant.types.FileSet;
 import org.jenkinsci.plugins.workflow.actions.LabelAction;
 import org.jenkinsci.plugins.workflow.flow.FlowExecution;
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner;
@@ -30,10 +36,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.io.Charsets;
@@ -134,7 +137,7 @@ public class ParallelTestExecutor extends Builder {
         FilePath dir = workspace.child("test-splits");
         dir.deleteRecursive();
         List<InclusionExclusionPattern> splits = findTestSplits(parallelism, build, listener, includesPatternFile != null,
-                null);
+                null, build.getWorkspace());
         for (int i = 0; i < splits.size(); i++) {
             InclusionExclusionPattern pattern = splits.get(i);
             try (OutputStream os = dir.child("split." + i + "." + (pattern.isIncludes() ? "include" : "exclude") + ".txt").write();
@@ -155,14 +158,41 @@ public class ParallelTestExecutor extends Builder {
         return true;
     }
 
+    public static Map<String, TestClass>  findTestResultsInDirectory(Run<?,?> build, TaskListener listener, FilePath workspace){
+        if(workspace==null){
+            return Collections.emptyMap();
+        }
+        String[] tests = null;
+        Map<String, TestClass> data = new TreeMap<String, TestClass>();
+        final String baseDir = workspace.getRemote();
+        try {
+            tests = workspace.act(new MasterToSlaveCallable<String[], Throwable>() {
+                @Override
+                public String[] call() throws Throwable {
+
+                    return Util.createFileSet(new File(baseDir), "**/src/test/java/**/*Test.java").getDirectoryScanner().getIncludedFiles();
+                }
+            });
+        } catch (Throwable throwable) {
+            throwable.printStackTrace(listener.getLogger());
+            return data;
+        }
+        for(String test : tests){
+            test = test.split("src/test/java/")[1];
+            //remove suffix of file
+            test = test.substring(0,test.length()-5);
+            data.put(test, new TestClass(test));
+        }
+        return data;
+
+    }
+
     static List<InclusionExclusionPattern> findTestSplits(Parallelism parallelism, Run<?,?> build, TaskListener listener,
                                                           boolean generateInclusions,
-                                                          @CheckForNull final String stageName) {
+                                                          @CheckForNull final String stageName, FilePath workspace) {
         TestResult tr = findPreviousTestResult(build, listener);
-        if (tr == null) {
-            listener.getLogger().println("No record available, so executing everything in one place");
-            return Collections.singletonList(new InclusionExclusionPattern(Collections.<String>emptyList(), false));
-        } else {
+        Map<String/*fully qualified class name*/, TestClass> data = new TreeMap<>();
+        if (tr != null) {
             Run<?,?> prevRun = tr.getRun();
             if (prevRun instanceof FlowExecutionOwner.Executable && stageName != null) {
                 FlowExecutionOwner owner = ((FlowExecutionOwner.Executable)prevRun).asFlowExecutionOwner();
@@ -178,9 +208,15 @@ public class ParallelTestExecutor extends Builder {
                     }
                 }
             }
-
-            Map<String/*fully qualified class name*/, TestClass> data = new TreeMap<>();
             collect(tr, data);
+        } else {
+            listener.getLogger().println("No record available, try to find test classes");
+            data = findTestResultsInDirectory(build, listener, workspace);
+            if(data.isEmpty()) {
+                listener.getLogger().println("No test classes was found, so executing everything in one place");
+                return Collections.singletonList(new InclusionExclusionPattern(Collections.<String>emptyList(), false));
+            }
+        }
 
             // sort in the descending order of the duration
             List<TestClass> sorted = new ArrayList<>(data.values());
@@ -235,7 +271,6 @@ public class ParallelTestExecutor extends Builder {
                 }
             }
             return r;
-        }
     }
 
     /**
