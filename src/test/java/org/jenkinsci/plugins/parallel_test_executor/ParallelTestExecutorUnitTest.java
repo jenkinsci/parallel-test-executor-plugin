@@ -1,5 +1,6 @@
 package org.jenkinsci.plugins.parallel_test_executor;
 
+import hudson.FilePath;
 import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
@@ -110,5 +111,12 @@ public class ParallelTestExecutorUnitTest {
         Collections.sort(exclusions);
         Collections.sort(inclusions);
         assertEquals("exclusions set should contain all elements included by inclusions set", inclusions, exclusions);
+    }
+
+    @Test
+    public void findTestInJavaProjectDirectory(){
+        CountDrivenParallelism parallelism = new CountDrivenParallelism(5);
+        List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, build, listener, true, null, new FilePath(scanner.getBasedir()));
+        assertEquals(5, splits.size());
     }
 }
