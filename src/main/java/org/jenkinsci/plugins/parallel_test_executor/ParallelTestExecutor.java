@@ -21,6 +21,7 @@ import hudson.tasks.test.TestResult;
 import hudson.util.DirScanner;
 import jenkins.security.MasterToSlaveCallable;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.FileScanner;
 import org.apache.tools.ant.types.FileSet;
@@ -165,7 +166,14 @@ public class ParallelTestExecutor extends Builder {
         String[] tests = null;
         Map<String, TestClass> data = new TreeMap<String, TestClass>();
         final String baseDir = workspace.getRemote();
+        String separator = null;
         try {
+            separator = workspace.act(new MasterToSlaveCallable<String, Throwable>() {
+                @Override
+                public String call() throws Throwable {
+                    return File.separator;
+                }
+            });
             tests = workspace.act(new MasterToSlaveCallable<String[], Throwable>() {
                 @Override
                 public String[] call() throws Throwable {
@@ -173,12 +181,18 @@ public class ParallelTestExecutor extends Builder {
                     return Util.createFileSet(new File(baseDir), "**/src/test/java/**/*Test.java").getDirectoryScanner().getIncludedFiles();
                 }
             });
+
         } catch (Throwable throwable) {
             throwable.printStackTrace(listener.getLogger());
             return data;
         }
         for(String test : tests){
-            test = test.split("src/test/java/")[1];
+            if(separator.equals("\\")){
+                //for regex expression
+                separator = separator + separator;
+            }
+            String path = StringUtils.join(new String[]{"src", "test", "java"}, separator);
+            test = test.split(path)[1];
             //remove suffix of file
             test = test.substring(0,test.length()-5);
             data.put(test, new TestClass(test));
