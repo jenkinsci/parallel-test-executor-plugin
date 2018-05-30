@@ -159,7 +159,7 @@ public class ParallelTestExecutor extends Builder {
         return true;
     }
 
-    public static Map<String, TestClass>  findTestResultsInDirectory(Run<?,?> build, TaskListener listener, FilePath workspace){
+    public static Map<String, TestClass>  findTestResultsInDirectory(Run<?,?> build, TaskListener listener, @CheckForNull FilePath workspace){
         if(workspace==null){
             return Collections.emptyMap();
         }
@@ -203,7 +203,7 @@ public class ParallelTestExecutor extends Builder {
 
     static List<InclusionExclusionPattern> findTestSplits(Parallelism parallelism, Run<?,?> build, TaskListener listener,
                                                           boolean generateInclusions,
-                                                          @CheckForNull final String stageName, FilePath workspace) {
+                                                          @CheckForNull final String stageName, @CheckForNull FilePath workspace) {
         TestResult tr = findPreviousTestResult(build, listener);
         Map<String/*fully qualified class name*/, TestClass> data = new TreeMap<>();
         if (tr != null) {
