@@ -167,18 +167,24 @@ public class ParallelTestExecutor extends Builder {
         Map<String, TestClass> data = new TreeMap<String, TestClass>();
         final String baseDir = workspace.getRemote();
         String separator = null;
+        final List<String> testFilesExpression = new ArrayList<String>();
+        testFilesExpression.add("**/Test*.java");
+        testFilesExpression.add("**/*Test.java");
+        testFilesExpression.add("**/*Tests.java");
+        testFilesExpression.add("**/*TestCase.java");
         try {
             separator = workspace.act(new MasterToSlaveCallable<String, Throwable>() {
+
                 @Override
                 public String call() throws Throwable {
                     return File.separator;
                 }
             });
             tests = workspace.act(new MasterToSlaveCallable<String[], Throwable>() {
+
                 @Override
                 public String[] call() throws Throwable {
-
-                    return Util.createFileSet(new File(baseDir), "**/src/test/java/**/*Test.java").getDirectoryScanner().getIncludedFiles();
+                    return Util.createFileSet(new File(baseDir), StringUtils.join(testFilesExpression,",")).getDirectoryScanner().getIncludedFiles();
                 }
             });
 
