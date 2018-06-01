@@ -192,11 +192,11 @@ public class ParallelTestExecutor extends Builder {
             throwable.printStackTrace(listener.getLogger());
             return data;
         }
+        if(separator.equals("\\")){
+            //for regex expression
+            separator = separator + separator;
+        }
         for(String test : tests){
-            if(separator.equals("\\")){
-                //for regex expression
-                separator = separator + separator;
-            }
             String path = StringUtils.join(new String[]{"src", "test", "java"}, separator);
             test = test.split(path)[1];
             //remove suffix of file
