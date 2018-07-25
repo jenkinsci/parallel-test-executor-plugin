@@ -168,10 +168,10 @@ public class ParallelTestExecutor extends Builder {
         final String baseDir = workspace.getRemote();
         String separator = null;
         final List<String> testFilesExpression = new ArrayList<String>();
-        testFilesExpression.add("**/Test*.java");
-        testFilesExpression.add("**/*Test.java");
-        testFilesExpression.add("**/*Tests.java");
-        testFilesExpression.add("**/*TestCase.java");
+        testFilesExpression.add("**/src/test/java/**/Test*.java");
+        testFilesExpression.add("**/src/test/java/**/*Test.java");
+        testFilesExpression.add("**/src/test/java/**/*Tests.java");
+        testFilesExpression.add("**/src/test/java/**/*TestCase.java");
         try {
             separator = workspace.act(new MasterToSlaveCallable<String, Throwable>() {
 
@@ -198,7 +198,7 @@ public class ParallelTestExecutor extends Builder {
         }
         for(String test : tests){
             String path = StringUtils.join(new String[]{"src", "test", "java"}, separator);
-            test = test.split(path)[1];
+            test = test.split(path + separator)[1];
             //remove suffix of file
             test = test.substring(0,test.length()-5);
             data.put(test, new TestClass(test));
