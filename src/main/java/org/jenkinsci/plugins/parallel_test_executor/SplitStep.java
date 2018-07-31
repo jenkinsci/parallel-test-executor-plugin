@@ -27,6 +27,8 @@ public final class SplitStep extends AbstractStepImpl {
 
     private String stage;
 
+    private boolean estimateTestsFromFiles;
+
     @DataBoundConstructor public SplitStep(Parallelism parallelism) {
         this.parallelism = parallelism;
     }
@@ -40,6 +42,15 @@ public final class SplitStep extends AbstractStepImpl {
     @DataBoundSetter
     public void setGenerateInclusions(boolean generateInclusions) {
         this.generateInclusions = generateInclusions;
+    }
+
+    @DataBoundSetter
+    public void setEstimateTestsFromFiles(boolean estimateTestsFromFiles) {
+        this.estimateTestsFromFiles = estimateTestsFromFiles;
+    }
+
+    public boolean getEstimateTestsFromFiles(){
+        return estimateTestsFromFiles;
     }
 
     public String getStage() {
@@ -79,11 +90,11 @@ public final class SplitStep extends AbstractStepImpl {
             FilePath path = this.getContext().get(FilePath.class);
             if (step.generateInclusions) {
                 return ParallelTestExecutor.findTestSplits(step.parallelism, build, listener, step.generateInclusions,
-                        step.stage, path);
+                        step.stage, path, step.estimateTestsFromFiles);
             } else {
                 List<List<String>> result = new ArrayList<>();
                 for (InclusionExclusionPattern pattern : ParallelTestExecutor.findTestSplits(step.parallelism, build, listener,
-                        step.generateInclusions, step.stage, path)) {
+                        step.generateInclusions, step.stage, path, step.estimateTestsFromFiles)) {
                     result.add(pattern.getList());
                 }
                 return result;

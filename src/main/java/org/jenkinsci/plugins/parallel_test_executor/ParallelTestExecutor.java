@@ -60,15 +60,17 @@ public class ParallelTestExecutor extends Builder {
     private String testReportFiles;
     private boolean doNotArchiveTestResults = false;
     private List<AbstractBuildParameters> parameters;
+    private boolean estimateTestsFromFiles = false;
 
     @DataBoundConstructor
-    public ParallelTestExecutor(Parallelism parallelism, String testJob, String patternFile, String testReportFiles, boolean archiveTestResults, List<AbstractBuildParameters> parameters) {
+    public ParallelTestExecutor(Parallelism parallelism, String testJob, String patternFile, String testReportFiles, boolean archiveTestResults, List<AbstractBuildParameters> parameters, boolean estimateTestsFromFiles) {
         this.parallelism = parallelism;
         this.testJob = testJob;
         this.patternFile = patternFile;
         this.testReportFiles = testReportFiles;
         this.parameters = parameters;
         this.doNotArchiveTestResults = !archiveTestResults;
+        this.estimateTestsFromFiles = estimateTestsFromFiles;
     }
 
     public Parallelism getParallelism() {
@@ -138,7 +140,7 @@ public class ParallelTestExecutor extends Builder {
         FilePath dir = workspace.child("test-splits");
         dir.deleteRecursive();
         List<InclusionExclusionPattern> splits = findTestSplits(parallelism, build, listener, includesPatternFile != null,
-                null, build.getWorkspace());
+                null, build.getWorkspace(), estimateTestsFromFiles);
         for (int i = 0; i < splits.size(); i++) {
             InclusionExclusionPattern pattern = splits.get(i);
             try (OutputStream os = dir.child("split." + i + "." + (pattern.isIncludes() ? "include" : "exclude") + ".txt").write();
@@ -209,7 +211,7 @@ public class ParallelTestExecutor extends Builder {
 
     static List<InclusionExclusionPattern> findTestSplits(Parallelism parallelism, Run<?,?> build, TaskListener listener,
                                                           boolean generateInclusions,
-                                                          @CheckForNull final String stageName, @CheckForNull FilePath workspace) {
+                                                          @CheckForNull final String stageName, @CheckForNull FilePath workspace, boolean estimateTestsFromFiles) {
         TestResult tr = findPreviousTestResult(build, listener);
         Map<String/*fully qualified class name*/, TestClass> data = new TreeMap<>();
         if (tr != null) {
@@ -230,8 +232,10 @@ public class ParallelTestExecutor extends Builder {
             }
             collect(tr, data);
         } else {
-            listener.getLogger().println("No record available, try to find test classes");
-            data = findTestResultsInDirectory(build, listener, workspace);
+            if(estimateTestsFromFiles) {
+                listener.getLogger().println("No record available, try to find test classes");
+                data = findTestResultsInDirectory(build, listener, workspace);
+            }
             if(data.isEmpty()) {
                 listener.getLogger().println("No test classes was found, so executing everything in one place");
                 return Collections.singletonList(new InclusionExclusionPattern(Collections.<String>emptyList(), false));
