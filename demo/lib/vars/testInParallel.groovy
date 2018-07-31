@@ -2,7 +2,7 @@ def call(parallelism, inclusionsFile, exclusionsFile, results, image, prepare, r
   def splits
   node {
     prepare()
-    splits = splitTests parallelism: parallelism, generateInclusions: true
+    splits = splitTests parallelism: parallelism, generateInclusions: true, estimateTestsFromFiles: true
   }
   def branches = [:]
   for (int i = 0; i < splits.size(); i++) {
