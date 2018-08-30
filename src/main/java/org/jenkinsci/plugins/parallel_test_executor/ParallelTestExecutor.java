@@ -311,7 +311,7 @@ public class ParallelTestExecutor extends Builder {
         for (int i = 0; i < NUMBER_OF_BUILDS_TO_SEARCH; i++) {// limit the search to a small number to avoid loading too much
             b = b.getPreviousBuild();
             if (b == null) break;
-            if(!RESULTS_OF_BUILDS_TO_CONSIDER.contains(b.getResult())) continue;
+            if(!RESULTS_OF_BUILDS_TO_CONSIDER.contains(b.getResult()) || b.isBuilding()) continue;
 
             AbstractTestResultAction tra = b.getAction(AbstractTestResultAction.class);
             if (tra == null) continue;
