@@ -49,7 +49,7 @@ public final class SplitStep extends AbstractStepImpl {
         this.estimateTestsFromFiles = estimateTestsFromFiles;
     }
 
-    public boolean getEstimateTestsFromFiles(){
+    public boolean isEstimateTestsFromFiles(){
         return estimateTestsFromFiles;
     }
 

@@ -21,6 +21,7 @@ import hudson.tasks.test.TestResult;
 import hudson.util.DirScanner;
 import jenkins.security.MasterToSlaveCallable;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.FileScanner;
@@ -202,7 +203,7 @@ public class ParallelTestExecutor extends Builder {
             String path = StringUtils.join(new String[]{"src", "test", "java"}, separator);
             test = test.split(path + separator)[1];
             //remove suffix of file
-            test = test.substring(0,test.length()-5);
+            test = FilenameUtils.removeExtension(test);
             data.put(test, new TestClass(test));
         }
         return data;
