@@ -20,7 +20,10 @@ public class CountDrivenParallelism extends Parallelism {
 
     @Override
     public int calculate(List<TestClass> tests) {
-        return size;
+        // Don't split into 5 buckets if we only have 2 tests etc
+        return tests == null ?
+               size :
+               Math.min(size, tests.size());
     }
 
     @Symbol("count")
