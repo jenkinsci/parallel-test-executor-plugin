@@ -137,7 +137,7 @@ public class ParallelTestExecutorUnitTest {
     public void findTestOfJavaProjectDirectoryInWorkspace(){
         CountDrivenParallelism parallelism = new CountDrivenParallelism(5);
         Map<String,TestClass> data = ParallelTestExecutor.findTestResultsInDirectory(build, listener, new FilePath(scanner.getBasedir()));
-        Set<String> expectedTests = new HashSet<String>();
+        Set<String> expectedTests = new HashSet<>();
         expectedTests.add("FirstTest");
         expectedTests.add("SecondTest");
 
