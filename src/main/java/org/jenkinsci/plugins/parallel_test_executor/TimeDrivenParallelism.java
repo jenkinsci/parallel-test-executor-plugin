@@ -2,10 +2,11 @@ package org.jenkinsci.plugins.parallel_test_executor;
 
 import hudson.Extension;
 import hudson.model.Descriptor;
-import hudson.util.TimeUnit2;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
 import org.jenkinsci.Symbol;
 
 /**
@@ -25,7 +26,7 @@ public class TimeDrivenParallelism extends Parallelism {
         for (TestClass test : tests) {
             total += test.duration;
         }
-        long chunk = TimeUnit2.MINUTES.toMillis(mins);
+        long chunk = TimeUnit.MINUTES.toMillis(mins);
         return (int)((total+chunk-1)/chunk);
     }
 
