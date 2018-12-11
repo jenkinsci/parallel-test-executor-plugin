@@ -2,6 +2,9 @@ TAG=$(shell date -I -u)
 IMAGE=jenkinsci/parallel-test-executor-demo
 DOCKER_RUN=docker run --rm -p 127.0.0.1:8080:8080 -v m2repo:/m2repo -v /var/run/docker.sock:/var/run/docker.sock --group-add=$(shell stat -c %g /var/run/docker.sock) -ti
 
+validate:
+	mvn -Dtest=InjectedTest clean test
+
 copy-plugins:
 	if [ \! -f ../target/parallel-test-executor.hpi ]; then mvn -f .. -DskipTests install; fi
 	if [ \! -f target/test-classes/test-dependencies/index -o \
