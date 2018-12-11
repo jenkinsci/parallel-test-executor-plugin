@@ -93,6 +93,21 @@ public class ParallelTestExecutorUnitTest {
     }
 
     @Test
+    public void testWeDoNotCreateMoreSplitsThanThereAreTests() throws Exception {
+        // The test report only has 2 classes, so we should only split into 2 test executors
+        TestResult testResult = new TestResult(0L, scanner, false);
+        testResult.tally();
+        when(action.getResult()).thenReturn(testResult);
+
+        CountDrivenParallelism parallelism = new CountDrivenParallelism(5);
+        List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, build, listener, false, null, null, false);
+        assertEquals(2, splits.size());
+        for (InclusionExclusionPattern split : splits) {
+            assertFalse(split.isIncludes());
+        }
+    }
+
+    @Test
     public void findTestSplitsInclusions() throws Exception {
         TestResult testResult = new TestResult(0L, scanner, false);
         testResult.tally();
