@@ -7,7 +7,7 @@
     <relativePath />
   </parent>
   <artifactId>parallel-test-executor</artifactId>
-  <version>1.12</version>
+  <version>1.13-SNAPSHOT</version>
   <packaging>hpi</packaging>
   <name>Parallel Test Executor Plugin</name>
   <url>http://wiki.jenkins-ci.org/display/JENKINS/Parallel+Test+Executor+Plugin</url>
@@ -36,7 +36,7 @@
   <scm>
     <connection>scm:git:git://github.com/jenkinsci/${project.artifactId}-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:jenkinsci/${project.artifactId}-plugin.git</developerConnection>
-    <tag>parallel-test-executor-1.12</tag>
+    <tag>HEAD</tag>
   </scm>
   <dependencies>
     <dependency>
