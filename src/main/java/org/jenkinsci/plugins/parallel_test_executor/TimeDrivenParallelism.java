@@ -13,7 +13,7 @@ import org.jenkinsci.Symbol;
  * @author Kohsuke Kawaguchi
  */
 public class TimeDrivenParallelism extends Parallelism {
-    public int mins;
+    public final int mins;
 
     @DataBoundConstructor
     public TimeDrivenParallelism(int mins) {

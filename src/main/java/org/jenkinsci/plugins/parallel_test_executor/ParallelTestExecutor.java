@@ -45,15 +45,15 @@ import javax.annotation.Nullable;
 public class ParallelTestExecutor extends Builder {
     public static final int NUMBER_OF_BUILDS_TO_SEARCH = 20;
     public static final ImmutableSet<Result> RESULTS_OF_BUILDS_TO_CONSIDER = ImmutableSet.of(Result.SUCCESS, Result.UNSTABLE);
-    private Parallelism parallelism;
 
-    private String testJob;
-    private String patternFile;
+    private final Parallelism parallelism;
+    private final String testJob;
+    private final String patternFile;
     private String includesPatternFile;
-    private String testReportFiles;
-    private boolean doNotArchiveTestResults = false;
-    private List<AbstractBuildParameters> parameters;
-    private boolean estimateTestsFromFiles = false;
+    private final String testReportFiles;
+    private final boolean doNotArchiveTestResults;
+    private final List<AbstractBuildParameters> parameters;
+    private final boolean estimateTestsFromFiles;
 
     @DataBoundConstructor
     public ParallelTestExecutor(Parallelism parallelism, String testJob, String patternFile, String testReportFiles, boolean archiveTestResults, List<AbstractBuildParameters> parameters, boolean estimateTestsFromFiles) {
