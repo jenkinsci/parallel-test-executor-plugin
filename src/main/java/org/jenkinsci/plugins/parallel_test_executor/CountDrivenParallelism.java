@@ -11,7 +11,7 @@ import org.jenkinsci.Symbol;
  * @author Kohsuke Kawaguchi
  */
 public class CountDrivenParallelism extends Parallelism {
-    public int size;
+    public final int size;
 
     @DataBoundConstructor
     public CountDrivenParallelism(int size) {

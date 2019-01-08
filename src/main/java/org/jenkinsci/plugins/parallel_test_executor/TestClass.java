@@ -9,8 +9,9 @@ import org.jenkinsci.plugins.parallel_test_executor.ParallelTestExecutor.Knapsac
  */
 @SuppressFBWarnings(value="EQ_COMPARETO_USE_OBJECT_EQUALS", justification="Cf. justification in Knapsack.")
 public class TestClass implements Comparable<TestClass> {
-    String className;
-    long duration;
+
+    final String className;
+    final long duration;
     /**
      * Knapsack that this test class belongs to.
      */

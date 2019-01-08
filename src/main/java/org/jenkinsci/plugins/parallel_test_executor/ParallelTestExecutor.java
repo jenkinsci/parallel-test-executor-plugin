@@ -1,7 +1,6 @@
 package org.jenkinsci.plugins.parallel_test_executor;
 
 import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableSet;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.AbortException;
@@ -18,21 +17,14 @@ import hudson.tasks.junit.JUnitResultArchiver;
 import hudson.tasks.test.AbstractTestResultAction;
 import hudson.tasks.test.TabulatedResult;
 import hudson.tasks.test.TestResult;
-import hudson.util.DirScanner;
 import jenkins.security.MasterToSlaveCallable;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.tools.ant.DirectoryScanner;
-import org.apache.tools.ant.FileScanner;
-import org.apache.tools.ant.types.FileSet;
 import org.jenkinsci.plugins.workflow.actions.LabelAction;
 import org.jenkinsci.plugins.workflow.flow.FlowExecution;
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner;
 import org.jenkinsci.plugins.workflow.graph.FlowNode;
 import org.jenkinsci.plugins.workflow.graphanalysis.DepthFirstScanner;
-import org.jenkinsci.plugins.workflow.graphanalysis.FlowScanningUtils;
-import org.jenkinsci.plugins.workflow.graphanalysis.NodeStepTypePredicate;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -53,15 +45,15 @@ import javax.annotation.Nullable;
 public class ParallelTestExecutor extends Builder {
     public static final int NUMBER_OF_BUILDS_TO_SEARCH = 20;
     public static final ImmutableSet<Result> RESULTS_OF_BUILDS_TO_CONSIDER = ImmutableSet.of(Result.SUCCESS, Result.UNSTABLE);
-    private Parallelism parallelism;
 
-    private String testJob;
-    private String patternFile;
+    private final Parallelism parallelism;
+    private final String testJob;
+    private final String patternFile;
     private String includesPatternFile;
-    private String testReportFiles;
-    private boolean doNotArchiveTestResults = false;
-    private List<AbstractBuildParameters> parameters;
-    private boolean estimateTestsFromFiles = false;
+    private final String testReportFiles;
+    private final boolean doNotArchiveTestResults;
+    private final List<AbstractBuildParameters> parameters;
+    private final boolean estimateTestsFromFiles;
 
     @DataBoundConstructor
     public ParallelTestExecutor(Parallelism parallelism, String testJob, String patternFile, String testReportFiles, boolean archiveTestResults, List<AbstractBuildParameters> parameters, boolean estimateTestsFromFiles) {
@@ -167,10 +159,10 @@ public class ParallelTestExecutor extends Builder {
             return Collections.emptyMap();
         }
         String[] tests = null;
-        Map<String, TestClass> data = new TreeMap<String, TestClass>();
+        Map<String, TestClass> data = new TreeMap<>();
         final String baseDir = workspace.getRemote();
         String separator = null;
-        final List<String> testFilesExpression = new ArrayList<String>();
+        final List<String> testFilesExpression = new ArrayList<>();
         testFilesExpression.add("**/src/test/java/**/Test*.java");
         testFilesExpression.add("**/src/test/java/**/*Test.java");
         testFilesExpression.add("**/src/test/java/**/*Tests.java");
