@@ -31,6 +31,8 @@ public final class SplitStep extends Step {
 
     private boolean estimateTestsFromFiles;
 
+    private boolean integrationTests;
+
     @DataBoundConstructor
     public SplitStep(Parallelism parallelism) {
         this.parallelism = parallelism;
@@ -47,6 +49,15 @@ public final class SplitStep extends Step {
     @DataBoundSetter
     public void setGenerateInclusions(boolean generateInclusions) {
         this.generateInclusions = generateInclusions;
+    }
+
+    public boolean isIntegrationTests() {
+        return integrationTests;
+    }
+
+    @DataBoundSetter
+    public void setIntegrationTests(boolean integrationTests) {
+        this.integrationTests = integrationTests;
     }
 
     public boolean isEstimateTestsFromFiles() {
@@ -111,11 +122,11 @@ public final class SplitStep extends Step {
 
             if (step.generateInclusions) {
                 return ParallelTestExecutor.findTestSplits(step.parallelism, build, listener, step.generateInclusions,
-                        step.stage, path, step.estimateTestsFromFiles);
+                        step.stage, path, step.estimateTestsFromFiles, step.integrationTests);
             } else {
                 List<List<String>> result = new ArrayList<>();
                 for (InclusionExclusionPattern pattern : ParallelTestExecutor.findTestSplits(step.parallelism, build, listener,
-                        step.generateInclusions, step.stage, path, step.estimateTestsFromFiles)) {
+                        step.generateInclusions, step.stage, path, step.estimateTestsFromFiles, step.integrationTests)) {
                     result.add(pattern.getList());
                 }
                 return result;

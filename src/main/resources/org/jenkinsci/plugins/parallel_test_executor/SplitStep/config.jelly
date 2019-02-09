@@ -10,4 +10,7 @@
     <f:entry field="estimateTestsFromFiles">
             <f:checkbox title="Estimate tests from file sources"/>
         </f:entry>
+    <f:entry field="integrationTests">
+            <f:checkbox title="Estimate *IT files instead of *Test"/>
+        </f:entry>
 </j:jelly>
