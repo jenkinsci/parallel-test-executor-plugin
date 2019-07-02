@@ -144,7 +144,7 @@ public class ParallelTestExecutorTest {
         WorkflowJob p = jenkinsRule.jenkins.createProject(WorkflowJob.class, "p");
         p.setDefinition(new CpsFlowDefinition(
             "node {\n" +
-            "   sh \"git clone https://github.com/jenkinsci/acceptance-test-harness.git\"\n" +
+            "   git changelog: false, poll: false, url: 'https://github.com/jenkinsci/acceptance-test-harness.git', branch: 'master'\n" +
             "   def splits = splitTests(parallelism: [$class: 'CountDrivenParallelism', size: 5], estimateTestsFromFiles: true)\n" +
             "   echo \"splits.size=${splits.size()}\"\n" +
             "}\n", true));
