@@ -138,4 +138,17 @@ public class ParallelTestExecutorTest {
         jenkinsRule.assertLogContains("allSplits[0]: includes=false list=[one.java, one.class, two.java, two.class]", b2);
         jenkinsRule.assertLogContains("allSplits[1]: includes=true list=[one.java, one.class, two.java, two.class]", b2);
     }
+
+    @Test
+    public void splitTestsEstimateTestsFromFiles() throws Exception {
+        WorkflowJob p = jenkinsRule.jenkins.createProject(WorkflowJob.class, "p");
+        p.setDefinition(new CpsFlowDefinition(
+            "node {\n" +
+            "   sh \"git clone https://github.com/jenkinsci/acceptance-test-harness.git\"\n" +
+            "   def splits = splitTests(parallelism: [$class: 'CountDrivenParallelism', size: 5], estimateTestsFromFiles: true)\n" +
+            "   echo \"splits.size=${splits.size()}\"\n" +
+            "}\n", true));
+        WorkflowRun b1 = jenkinsRule.assertBuildStatusSuccess(p.scheduleBuild2(0));
+        jenkinsRule.assertLogContains("splits.size=5", b1);
+    }
 }
