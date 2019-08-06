@@ -3,6 +3,5 @@ update_configs:
   - package_manager: java:maven
     directory: /
     update_schedule: weekly
-    dependency_type: development
     default_reviewers:
       - jglick
