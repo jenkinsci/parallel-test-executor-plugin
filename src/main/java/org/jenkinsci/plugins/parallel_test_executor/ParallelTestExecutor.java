@@ -31,9 +31,9 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.commons.io.Charsets;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
@@ -137,7 +137,7 @@ public class ParallelTestExecutor extends Builder {
         for (int i = 0; i < splits.size(); i++) {
             InclusionExclusionPattern pattern = splits.get(i);
             try (OutputStream os = dir.child("split." + i + "." + (pattern.isIncludes() ? "include" : "exclude") + ".txt").write();
-                 OutputStreamWriter osw = new OutputStreamWriter(os, Charsets.UTF_8);
+                 OutputStreamWriter osw = new OutputStreamWriter(os, StandardCharsets.UTF_8);
                  PrintWriter pw = new PrintWriter(osw)) {
                 for (String filePattern : pattern.getList()) {
                     pw.println(filePattern);
