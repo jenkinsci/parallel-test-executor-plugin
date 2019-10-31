@@ -10,7 +10,7 @@
   <version>1.13-SNAPSHOT</version>
   <packaging>hpi</packaging>
   <name>Parallel Test Executor Plugin</name>
-  <url>http://wiki.jenkins-ci.org/display/JENKINS/Parallel+Test+Executor+Plugin</url>
+  <url>https://github.com/jenkinsci/parallel-test-executor-plugin</url>
   <licenses>
     <license>
       <name>MIT License</name>
