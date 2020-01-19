@@ -17,6 +17,7 @@ import hudson.tasks.junit.JUnitResultArchiver;
 import hudson.tasks.test.AbstractTestResultAction;
 import hudson.tasks.test.TabulatedResult;
 import hudson.tasks.test.TestResult;
+import jenkins.model.Jenkins;
 import jenkins.security.MasterToSlaveCallable;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
@@ -359,10 +360,30 @@ public class ParallelTestExecutor extends Builder {
         }
     }
 
+    private static Run<?, ?> getSiblingBranchBuild(Job currentBranch, String siblingName) {
+        // If current branch is null, there is no sibling branch.
+        if (currentBranch == null) {
+            return null;
+        }
+        ItemGroup multibranchJob = currentBranch.getParent();
+        Job siblingJob = Jenkins.getInstance().getItem(siblingName, multibranchJob, Job.class);
+        if (siblingJob == null) {
+            return null;
+        }
+        return siblingJob.getLastBuild();
+    }
+
+
     private static TestResult findPreviousTestResult(Run<?, ?> b, TaskListener listener) {
+        Job currentBranch = b.getParent();
         for (int i = 0; i < NUMBER_OF_BUILDS_TO_SEARCH; i++) {// limit the search to a small number to avoid loading too much
             b = b.getPreviousBuild();
-            if (b == null) break;
+            if (b == null) {
+                b = getSiblingBranchBuild(currentBranch, "develop");
+            }
+            if (b == null) {
+                break;
+            }
             if(!RESULTS_OF_BUILDS_TO_CONSIDER.contains(b.getResult()) || b.isBuilding()) continue;
 
             AbstractTestResultAction tra = b.getAction(AbstractTestResultAction.class);
