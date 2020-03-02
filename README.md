@@ -2,8 +2,6 @@
 
 This plugin adds a tool that lets you easily execute tests in parallel.This is achieved by having Jenkins look at the test execution time of the last run, split tests into multiple units of roughly equal size, then execute them in parallel.
 
-View Parallel Test Executor [on the plugin site](https://plugins.jenkins.io/parallel-test-executor) for more information.
-
 How It Works
 ============
 
@@ -60,7 +58,7 @@ Newer version of Maven Surefire plugin supports **excludesFile** parameter. Fo
 
 Ant JUnit task supports the `excludesfile` attribute in its `<batchtest>` sub-element:
 
-```
+```xml
 <batchtest fork="yes" todir="build/test-reports">
   <fileset dir="test" excludesfile="exclusions.txt">
     <include name="**/*Test*.java"/>
