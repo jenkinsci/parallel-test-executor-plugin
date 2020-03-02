@@ -16,7 +16,7 @@ This tool can be used with any test job that
 
 You are responsible for configuring the build script to honor the exclusion file. A standard technique is to write the build script to always refer to a fixed exclusion list file, and check in an empty file by that name. You can then specify that file as the "exclusion file name" in the configuration of this builder, and the builder will overwrite the empty file from SCM by the generated one.
 
-There are two modes: one used with [Pipeline Plugin](https://wiki.jenkins.io/display/JENKINS/Pipeline+Plugin), the other with freestyle projects. The former is more flexible and straightforward.
+There are two modes: one used with [Jenkins Pipeline](https://jenkins.io/doc/book/pipeline/), the other with freestyle projects. The former is more flexible and straightforward.
 
 Pipeline step
 -------------
