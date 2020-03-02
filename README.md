@@ -74,7 +74,7 @@ The `demo` subdirectory in sources contains a demo of this plugin based on Doc
 
 ### Version 1.12 (2018-12-10)
 
--   [![](https://issues.jenkins-ci.org/secure/viewavatar?size=xsmall&avatarId=14673&avatarType=issuetype)JENKINS-53528](https://issues.jenkins-ci.org/browse/JENKINS-53528) - Parallel-test-executor can excessively split tests RESOLVED
+-   [JENKINS-53528](https://issues.jenkins-ci.org/browse/JENKINS-53528) - Parallel-test-executor can excessively split tests
 
 ### Version 1.11 (Sept 5, 2018)
 
