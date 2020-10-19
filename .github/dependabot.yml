@@ -1,0 +1,34 @@
+version: 2
+updates:
+- package-ecosystem: maven
+  directory: "/"
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 10
+  reviewers:
+  - jglick
+  ignore:
+  - dependency-name: org.jenkins-ci.plugins:junit
+    versions:
+    - "> 1.22"
+  - dependency-name: org.jenkins-ci.plugins:parameterized-trigger
+    versions:
+    - "> 2.33"
+  - dependency-name: org.jenkins-ci.plugins:script-security
+    versions:
+    - "> 1.30"
+  - dependency-name: org.jenkins-ci.plugins.workflow:workflow-api
+    versions:
+    - "> 2.23"
+  - dependency-name: org.jenkins-ci.plugins.workflow:workflow-cps
+    versions:
+    - "> 2.37"
+  - dependency-name: org.jenkins-ci.plugins.workflow:workflow-durable-task-step
+    versions:
+    - "> 2.13"
+  - dependency-name: org.jenkins-ci.plugins.workflow:workflow-job
+    versions:
+    - "> 2.11.1"
+  - dependency-name: org.jenkins-ci.plugins.workflow:workflow-step-api
+    versions:
+    - "> 2.12"
