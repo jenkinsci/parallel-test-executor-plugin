@@ -212,7 +212,7 @@ public class ParallelTestExecutor extends Builder {
             if (prevRun instanceof FlowExecutionOwner.Executable && stageName != null) {
                 FlowExecutionOwner owner = ((FlowExecutionOwner.Executable)prevRun).asFlowExecutionOwner();
                 if (owner != null) {
-                    FlowExecution execution = owner.getOrNull();
+                    FlowExecution execution = owner.get();
                     if (execution != null) {
                         DepthFirstScanner scanner = new DepthFirstScanner();
                         FlowNode stageId = scanner.findFirstMatch(execution, new StageNamePredicate(stageName));
