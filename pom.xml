@@ -3,7 +3,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>4.31</version>
+    <version>4.33</version>
     <relativePath />
   </parent>
   <artifactId>parallel-test-executor</artifactId>
@@ -18,7 +18,7 @@
     </license>
   </licenses>
   <properties>
-    <jenkins.version>2.164.3</jenkins.version>
+    <jenkins.version>2.249.1</jenkins.version>
     <java.level>8</java.level>
   </properties>
   <repositories>
@@ -44,8 +44,8 @@
     <dependencies>
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
-        <artifactId>bom-2.164.x</artifactId>
-        <version>10</version>
+        <artifactId>bom-2.249.x</artifactId>
+        <version>984.vb5eaac999a7e</version>
         <scope>import</scope>
         <type>pom</type>
       </dependency>
@@ -102,7 +102,6 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>pipeline-stage-step</artifactId>
-      <version>2.3</version>
       <scope>test</scope>
     </dependency>
     <dependency>
