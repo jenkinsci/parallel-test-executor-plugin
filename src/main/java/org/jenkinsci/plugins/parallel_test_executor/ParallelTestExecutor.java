@@ -35,9 +35,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 
 /**
  * @author Kohsuke Kawaguchi
@@ -396,7 +396,7 @@ public class ParallelTestExecutor extends Builder {
 
     private static class StageNamePredicate implements Predicate<FlowNode> {
         private final String stageName;
-        public StageNamePredicate(@Nonnull String stageName) {
+        public StageNamePredicate(@NonNull String stageName) {
             this.stageName = stageName;
         }
         @Override
