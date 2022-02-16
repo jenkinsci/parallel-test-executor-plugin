@@ -1,6 +1,7 @@
-def call(parallelism, inclusionsFile, exclusionsFile, results, stageName, prepare, run) {
+def call(parallelism, inclusionsFile, exclusionsFile, stageName, prepare, run) {
   def splits
   node {
+    deleteDir()
     prepare()
     splits = splitTests parallelism: parallelism, generateInclusions: true, estimateTestsFromFiles: true, stage: stageName
   }
@@ -9,9 +10,11 @@ def call(parallelism, inclusionsFile, exclusionsFile, results, stageName, prepar
     def num = i
     def split = splits[num]
     branches["split${num}"] = {
+      echo "in split$num: $split"
       stage("Test Section #${num + 1}") {
         node {
           stage('Preparation') {
+            deleteDir()
             prepare()
             writeFile file: (split.includes ? inclusionsFile : exclusionsFile), text: split.list.join("\n")
             writeFile file: (split.includes ? exclusionsFile : inclusionsFile), text: ''

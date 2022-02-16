@@ -1,42 +1,45 @@
 @Library('testInParallel') _
 
 properties([
-    parameters([
-        string(name: 'MULTIPLIER', defaultValue: '1', description: 'Factor by which to artificially slow down tests.'),
-        string(name: 'SPLIT', defaultValue: '5', description: 'Number of buckets to split tests into.')
-    ])
+  parameters([
+    string(name: 'MULTIPLIER', defaultValue: '1', description: 'Factor by which to artificially slow down tests.'),
+    string(name: 'SPLIT', defaultValue: '5', description: 'Number of buckets to split tests into.')
+  ])
 ])
 
 stage('Sources') {
   node {
     checkout scm
-    stash name: 'sources', excludes: 'Jenkinsfile,hello/target/,goodbye/target/'
+    dir('hello') {
+      stash name: 'hello', excludes: 'target/'
+    }
+    dir('goodbye') {
+      stash name: 'goodbye', excludes: 'target/'
+    }
   }
 }
 
 stage('Testing Hello') {
-  testInParallel(count(Integer.parseInt(params.SPLIT)), 'hello/inclusions.txt', 'hello/exclusions.txt',
-      'target/surefire-reports/TEST-*.xml', "Testing Hello", {
-    unstash 'sources'
+  testInParallel(count(Integer.parseInt(params.SPLIT)), 'inclusions.txt', 'exclusions.txt', 'Testing Hello', {
+    unstash 'hello'
   }, {
     configFileProvider([configFile(fileId: 'jenkins-mirror', variable: 'SETTINGS')]) {
       withEnv(["MULTIPLIER=$params.MULTIPLIER"]) {
-        sh 'cd hello && mvn -s $SETTINGS -B clean test -Dmaven.test.failure.ignore'
-        junit "hello/target/surefire-reports/*.xml"
+        sh 'mvn -s $SETTINGS -B -ntp -Dmaven.test.failure.ignore clean test'
+        junit 'target/surefire-reports/*.xml'
       }
     }
   })
 }
 
 stage('Testing Goodbye') {
-  testInParallel(count(Integer.parseInt(params.SPLIT)), 'goodbye/inclusions.txt', 'goodbye/exclusions.txt',
-      'target/surefire-reports/TEST-*.xml', "Testing Goodbye", {
-    unstash 'sources'
+  testInParallel(count(Integer.parseInt(params.SPLIT)), 'inclusions.txt', 'exclusions.txt', 'Testing Goodbye', {
+    unstash 'goodbye'
   }, {
     configFileProvider([configFile(fileId: 'jenkins-mirror', variable: 'SETTINGS')]) {
       withEnv(["MULTIPLIER=$params.MULTIPLIER"]) {
-        sh 'cd goodbye && mvn -s $SETTINGS -B clean test -Dmaven.test.failure.ignore'
-        junit "goodbye/target/surefire-reports/*.xml"
+        sh 'mvn -s $SETTINGS -B -ntp -Dmaven.test.failure.ignore clean test'
+        junit 'target/surefire-reports/*.xml'
       }
     }
   })
