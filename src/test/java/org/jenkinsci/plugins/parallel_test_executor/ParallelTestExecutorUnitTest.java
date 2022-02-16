@@ -81,7 +81,7 @@ public class ParallelTestExecutorUnitTest {
         when(action.getResult()).thenReturn(testResult);
 
         CountDrivenParallelism parallelism = new CountDrivenParallelism(5);
-        List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, build, listener, false, null, null, false);
+        List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, build, listener, false, null, null, false, false);
         assertEquals(5, splits.size());
         for (InclusionExclusionPattern split : splits) {
             assertFalse(split.isIncludes());
@@ -96,7 +96,7 @@ public class ParallelTestExecutorUnitTest {
         when(action.getResult()).thenReturn(testResult);
 
         CountDrivenParallelism parallelism = new CountDrivenParallelism(5);
-        List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, build, listener, false, null, null, false);
+        List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, build, listener, false, null, null, false, false);
         assertEquals(2, splits.size());
         for (InclusionExclusionPattern split : splits) {
             assertFalse(split.isIncludes());
@@ -110,7 +110,7 @@ public class ParallelTestExecutorUnitTest {
         when(action.getResult()).thenReturn(testResult);
 
         CountDrivenParallelism parallelism = new CountDrivenParallelism(5);
-        List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, build, listener, true, null, null, false);
+        List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, build, listener, true, null, null, false, false);
         assertEquals(5, splits.size());
         List<String> exclusions = new ArrayList<>(splits.get(0).getList());
         List<String> inclusions = new ArrayList<>();
@@ -129,14 +129,14 @@ public class ParallelTestExecutorUnitTest {
     @Test
     public void findTestInJavaProjectDirectory(){
         CountDrivenParallelism parallelism = new CountDrivenParallelism(5);
-        List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, build, listener, true, null, new FilePath(scanner.getBasedir()), true);
+        List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, build, listener, true, null, new FilePath(scanner.getBasedir()), true, false);
         assertEquals(5, splits.size());
     }
 
     @Test
     public void findTestOfJavaProjectDirectoryInWorkspace(){
         CountDrivenParallelism parallelism = new CountDrivenParallelism(5);
-        Map<String,TestClass> data = ParallelTestExecutor.findTestResultsInDirectory(build, listener, new FilePath(scanner.getBasedir()));
+        Map<String,TestClass> data = ParallelTestExecutor.findTestResultsInDirectory(build, listener, new FilePath(scanner.getBasedir()), false);
         Set<String> expectedTests = new HashSet<>();
         expectedTests.add("FirstTest");
         expectedTests.add("SecondTest");
@@ -146,7 +146,7 @@ public class ParallelTestExecutorUnitTest {
         expectedTests.add("FourthTest");
         expectedTests.add("FifthTest");
         assertEquals("Result does not contains expected tests.", expectedTests, data.keySet());
-        List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, build, listener, true, null, new FilePath(scanner.getBasedir()), true);
+        List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, build, listener, true, null, new FilePath(scanner.getBasedir()), true, false);
         assertEquals(5, splits.size());
     }
 }

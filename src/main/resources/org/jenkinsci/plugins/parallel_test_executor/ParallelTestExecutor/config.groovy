@@ -25,6 +25,10 @@ f.entry(title:"Estimate tests from file sources", field:"estimateTestsFromFiles"
     f.checkbox()
 }
 
+f.entry(title:"Estimate integration tests from file sources (only if estimateTestsFromFiles is true)", field:"integrationTests") {
+    f.checkbox()
+}
+
 f.block {
     f.entry(title:'Parameters for test job', help:descriptor.getHelpFile('parameters')) {
         f.repeatableHeteroProperty(
