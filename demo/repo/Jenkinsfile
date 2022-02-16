@@ -16,7 +16,7 @@ stage('Sources') {
 
 stage('Testing Hello') {
   testInParallel(count(Integer.parseInt(params.SPLIT)), 'hello/inclusions.txt', 'hello/exclusions.txt',
-      'target/surefire-reports/TEST-*.xml', 'maven:3.5.0-jdk-8', "Testing Hello", {
+      'target/surefire-reports/TEST-*.xml', "Testing Hello", {
     unstash 'sources'
   }, {
     configFileProvider([configFile(fileId: 'jenkins-mirror', variable: 'SETTINGS')]) {
@@ -30,15 +30,13 @@ stage('Testing Hello') {
 
 stage('Testing Goodbye') {
   testInParallel(count(Integer.parseInt(params.SPLIT)), 'goodbye/inclusions.txt', 'goodbye/exclusions.txt',
-      'target/surefire-reports/TEST-*.xml', 'maven:3.5.0-jdk-8', "Testing Goodbye", {
+      'target/surefire-reports/TEST-*.xml', "Testing Goodbye", {
     unstash 'sources'
   }, {
-    dir('goodbye') {
-      configFileProvider([configFile(fileId: 'jenkins-mirror', variable: 'SETTINGS')]) {
-        withEnv(["MULTIPLIER=$params.MULTIPLIER"]) {
-          sh 'cd goodbye && mvn -s $SETTINGS -B clean test -Dmaven.test.failure.ignore'
-          junit "goodbye/target/surefire-reports/*.xml"
-        }
+    configFileProvider([configFile(fileId: 'jenkins-mirror', variable: 'SETTINGS')]) {
+      withEnv(["MULTIPLIER=$params.MULTIPLIER"]) {
+        sh 'cd goodbye && mvn -s $SETTINGS -B clean test -Dmaven.test.failure.ignore'
+        junit "goodbye/target/surefire-reports/*.xml"
       }
     }
   })
