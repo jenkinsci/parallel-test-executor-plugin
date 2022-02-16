@@ -3,6 +3,7 @@ package org.jenkinsci.plugins.parallel_test_executor;
 import com.google.common.collect.ImmutableSet;
 import hudson.Extension;
 import hudson.FilePath;
+import hudson.Util;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 
@@ -64,7 +65,7 @@ public final class SplitStep extends Step {
 
     @DataBoundSetter
     public void setStage(String stage) {
-        this.stage = stage;
+        this.stage = Util.fixEmpty(stage);
     }
 
     @Override
