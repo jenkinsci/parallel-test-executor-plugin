@@ -1,4 +1,4 @@
-def call(parallelism, inclusionsFile, exclusionsFile, results, image, stageName, prepare, run) {
+def call(parallelism, inclusionsFile, exclusionsFile, results, stageName, prepare, run) {
   def splits
   node {
     prepare()
@@ -10,7 +10,7 @@ def call(parallelism, inclusionsFile, exclusionsFile, results, image, stageName,
     def split = splits[num]
     branches["split${num}"] = {
       stage("Test Section #${num + 1}") {
-        docker.image(image).inside {
+        node {
           stage('Preparation') {
             prepare()
             writeFile file: (split.includes ? inclusionsFile : exclusionsFile), text: split.list.join("\n")
