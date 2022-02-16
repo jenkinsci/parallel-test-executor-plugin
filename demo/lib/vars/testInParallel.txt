@@ -1,1 +1,0 @@
-Run tests in parallel. Arguments: parallelism, inclusionsFile, exclusionsFile, results, image, prepare, run

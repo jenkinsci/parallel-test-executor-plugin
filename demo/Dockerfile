@@ -1,16 +1,10 @@
-FROM jenkins/jenkins:2.204.5
+FROM jenkins/jenkins:2.319.3
 
 USER root
 
-ENV DOCKER_BUCKET get.docker.com
-ENV DOCKER_VERSION 1.12.6
-RUN set -x \
-    && curl -fSL "https://${DOCKER_BUCKET}/builds/Linux/x86_64/docker-$DOCKER_VERSION.tgz" -o docker.tgz \
-    && tar -xzvf docker.tgz \
-    && mv docker/* /usr/local/bin/ \
-    && rmdir docker \
-    && rm docker.tgz \
-    && docker -v
+ENV MAVEN_VERSION=3.8.4
+RUN curl -s https://dlcdn.apache.org/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar xvfCz - /opt && \
+    ln -sv /opt/apache-maven-$MAVEN_VERSION/bin/mvn /usr/local/bin/mvn
 
 ADD repo /tmp/repo
 COPY gen.sh /tmp/
