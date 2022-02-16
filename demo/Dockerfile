@@ -1,4 +1,4 @@
-FROM jenkins/jenkins:2.204.5
+FROM jenkins/jenkins:2.319.3
 
 USER root
 
@@ -16,9 +16,7 @@ ADD repo /tmp/repo
 COPY gen.sh /tmp/
 ADD lib /tmp/lib
 COPY plugins /usr/share/jenkins/ref/plugins
-RUN chown -R jenkins.jenkins /tmp/repo /tmp/lib /usr/share/jenkins/ref/plugins && \
-    apt-get -y update && \
-    apt-get -y install libltdl-dev
+RUN chown -R jenkins.jenkins /tmp/repo /tmp/lib /usr/share/jenkins/ref/plugins
 
 USER jenkins
 

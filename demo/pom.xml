@@ -5,14 +5,14 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>3.57</version>
+        <version>4.34</version>
         <relativePath />
     </parent>
     <artifactId>parallel-test-executor-demo</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>hpi</packaging>
     <properties>
-        <jenkins.version>2.164.3</jenkins.version>
+        <jenkins.version>2.319.3</jenkins.version>
         <java.level>8</java.level>
     </properties>
     <name>Parallel Test Executor Demo</name>
@@ -60,7 +60,6 @@
         <dependency>
             <groupId>org.jenkins-ci.plugins.workflow</groupId>
             <artifactId>workflow-multibranch</artifactId>
-            <version>2.20</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -76,7 +75,7 @@
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>config-file-provider</artifactId>
-            <version>3.4.1</version>
+            <version>3.9.0</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -88,7 +87,7 @@
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>docker-workflow</artifactId>
-            <version>1.17</version>
+            <version>1.28</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -104,36 +103,45 @@
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>mock-slave</artifactId>
-            <version>1.13</version>
+            <version>109.vac7845f10470</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>pipeline-stage-step</artifactId>
-            <version>2.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>junit-realtime-test-reporter</artifactId>
-            <version>0.6</version>
+            <version>82.vc2a_3f0f7a_291</version>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.jenkins-ci.main</groupId>
-                    <artifactId>maven-plugin</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
     </dependencies>
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>io.jenkins.tools.bom</groupId>
-                <artifactId>bom-2.164.x</artifactId>
-                <version>9</version>
+                <artifactId>bom-2.319.x</artifactId>
+                <version>1148.v7261f385f859</version>
                 <scope>import</scope>
                 <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>org.jenkins-ci.plugins</groupId>
+                <artifactId>parameterized-trigger</artifactId>
+                <version>2.43</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.jenkins-ci</groupId>
+                        <artifactId>symbol-annotation</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.jenkins-ci.main</groupId>
+                <artifactId>maven-plugin</artifactId>
+                <version>3.16</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
