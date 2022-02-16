@@ -14,7 +14,7 @@
   <mirrors>
     <mirror>
       <id>central</id>
-      <url>http://repo.jenkins-ci.org/simple/repo1-cache/</url>
+      <url>https://repo.jenkins-ci.org/simple/repo1-cache/</url>
       <mirrorOf>central</mirrorOf>
     </mirror>
   </mirrors>

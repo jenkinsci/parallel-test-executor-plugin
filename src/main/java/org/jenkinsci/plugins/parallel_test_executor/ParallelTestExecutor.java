@@ -1,7 +1,6 @@
 package org.jenkinsci.plugins.parallel_test_executor;
 
 import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableSet;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.AbortException;
@@ -18,29 +17,27 @@ import hudson.tasks.junit.JUnitResultArchiver;
 import hudson.tasks.test.AbstractTestResultAction;
 import hudson.tasks.test.TabulatedResult;
 import hudson.tasks.test.TestResult;
+import jenkins.security.MasterToSlaveCallable;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.workflow.actions.LabelAction;
 import org.jenkinsci.plugins.workflow.flow.FlowExecution;
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner;
 import org.jenkinsci.plugins.workflow.graph.FlowNode;
 import org.jenkinsci.plugins.workflow.graphanalysis.DepthFirstScanner;
-import org.jenkinsci.plugins.workflow.graphanalysis.FlowScanningUtils;
-import org.jenkinsci.plugins.workflow.graphanalysis.NodeDisplayNamePredicate;
-import org.jenkinsci.plugins.workflow.graphanalysis.NodeStepTypePredicate;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.commons.io.Charsets;
 
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 
 /**
  * @author Kohsuke Kawaguchi
@@ -48,23 +45,25 @@ import javax.annotation.Nonnull;
 public class ParallelTestExecutor extends Builder {
     public static final int NUMBER_OF_BUILDS_TO_SEARCH = 20;
     public static final ImmutableSet<Result> RESULTS_OF_BUILDS_TO_CONSIDER = ImmutableSet.of(Result.SUCCESS, Result.UNSTABLE);
-    private Parallelism parallelism;
 
-    private String testJob;
-    private String patternFile;
+    private final Parallelism parallelism;
+    private final String testJob;
+    private final String patternFile;
     private String includesPatternFile;
-    private String testReportFiles;
-    private boolean doNotArchiveTestResults = false;
-    private List<AbstractBuildParameters> parameters;
+    private final String testReportFiles;
+    private final boolean doNotArchiveTestResults;
+    private final List<AbstractBuildParameters> parameters;
+    private final boolean estimateTestsFromFiles;
 
     @DataBoundConstructor
-    public ParallelTestExecutor(Parallelism parallelism, String testJob, String patternFile, String testReportFiles, boolean archiveTestResults, List<AbstractBuildParameters> parameters) {
+    public ParallelTestExecutor(Parallelism parallelism, String testJob, String patternFile, String testReportFiles, boolean archiveTestResults, List<AbstractBuildParameters> parameters, boolean estimateTestsFromFiles) {
         this.parallelism = parallelism;
         this.testJob = testJob;
         this.patternFile = patternFile;
         this.testReportFiles = testReportFiles;
         this.parameters = parameters;
         this.doNotArchiveTestResults = !archiveTestResults;
+        this.estimateTestsFromFiles = estimateTestsFromFiles;
     }
 
     public Parallelism getParallelism() {
@@ -134,11 +133,11 @@ public class ParallelTestExecutor extends Builder {
         FilePath dir = workspace.child("test-splits");
         dir.deleteRecursive();
         List<InclusionExclusionPattern> splits = findTestSplits(parallelism, build, listener, includesPatternFile != null,
-                null);
+                null, build.getWorkspace(), estimateTestsFromFiles);
         for (int i = 0; i < splits.size(); i++) {
             InclusionExclusionPattern pattern = splits.get(i);
             try (OutputStream os = dir.child("split." + i + "." + (pattern.isIncludes() ? "include" : "exclude") + ".txt").write();
-                 OutputStreamWriter osw = new OutputStreamWriter(os, Charsets.UTF_8);
+                 OutputStreamWriter osw = new OutputStreamWriter(os, StandardCharsets.UTF_8);
                  PrintWriter pw = new PrintWriter(osw)) {
                 for (String filePattern : pattern.getList()) {
                     pw.println(filePattern);
@@ -155,14 +154,60 @@ public class ParallelTestExecutor extends Builder {
         return true;
     }
 
+    public static Map<String, TestClass>  findTestResultsInDirectory(Run<?,?> build, TaskListener listener, @CheckForNull FilePath workspace){
+        if(workspace==null){
+            return Collections.emptyMap();
+        }
+        String[] tests = null;
+        Map<String, TestClass> data = new TreeMap<>();
+        final String baseDir = workspace.getRemote();
+        String separator = null;
+        final List<String> testFilesExpression = new ArrayList<>();
+        testFilesExpression.add("**/src/test/java/**/Test*.java");
+        testFilesExpression.add("**/src/test/java/**/*Test.java");
+        testFilesExpression.add("**/src/test/java/**/*Tests.java");
+        testFilesExpression.add("**/src/test/java/**/*TestCase.java");
+        try {
+            separator = workspace.act(new MasterToSlaveCallable<String, Throwable>() {
+
+                @Override
+                public String call() throws Throwable {
+                    return File.separator;
+                }
+            });
+            tests = workspace.act(new MasterToSlaveCallable<String[], Throwable>() {
+
+                @Override
+                public String[] call() throws Throwable {
+                    return Util.createFileSet(new File(baseDir), StringUtils.join(testFilesExpression,",")).getDirectoryScanner().getIncludedFiles();
+                }
+            });
+
+        } catch (Throwable throwable) {
+            throwable.printStackTrace(listener.getLogger());
+            return data;
+        }
+        if(separator.equals("\\")){
+            //for regex expression
+            separator = separator + separator;
+        }
+        for(String test : tests){
+            String path = StringUtils.join(new String[]{"src", "test", "java"}, separator);
+            test = test.split(path + separator)[1];
+            //remove suffix of file
+            test = FilenameUtils.removeExtension(test);
+            data.put(test, new TestClass(test));
+        }
+        return data;
+
+    }
+
     static List<InclusionExclusionPattern> findTestSplits(Parallelism parallelism, Run<?,?> build, TaskListener listener,
                                                           boolean generateInclusions,
-                                                          @CheckForNull final String stageName) {
+                                                          @CheckForNull final String stageName, @CheckForNull FilePath workspace, boolean estimateTestsFromFiles) {
         TestResult tr = findPreviousTestResult(build, listener);
-        if (tr == null) {
-            listener.getLogger().println("No record available, so executing everything in one place");
-            return Collections.singletonList(new InclusionExclusionPattern(Collections.<String>emptyList(), false));
-        } else {
+        Map<String/*fully qualified class name*/, TestClass> data = new TreeMap<>();
+        if (tr != null) {
             Run<?,?> prevRun = tr.getRun();
             if (prevRun instanceof FlowExecutionOwner.Executable && stageName != null) {
                 FlowExecutionOwner owner = ((FlowExecutionOwner.Executable)prevRun).asFlowExecutionOwner();
@@ -170,7 +215,7 @@ public class ParallelTestExecutor extends Builder {
                     FlowExecution execution = owner.getOrNull();
                     if (execution != null) {
                         DepthFirstScanner scanner = new DepthFirstScanner();
-                        FlowNode stageId = scanner.findFirstMatch(execution, stageNamePredicate(stageName));
+                        FlowNode stageId = scanner.findFirstMatch(execution, new StageNamePredicate(stageName));
                         if (stageId != null) {
                             tr = ((hudson.tasks.junit.TestResult) tr).getResultForPipelineBlock(stageId.getId());
                         }
@@ -178,9 +223,17 @@ public class ParallelTestExecutor extends Builder {
                     }
                 }
             }
-
-            Map<String/*fully qualified class name*/, TestClass> data = new TreeMap<>();
             collect(tr, data);
+        } else {
+            if(estimateTestsFromFiles) {
+                listener.getLogger().println("No record available, try to find test classes");
+                data = findTestResultsInDirectory(build, listener, workspace);
+            }
+            if(data.isEmpty()) {
+                listener.getLogger().println("No test classes was found, so executing everything in one place");
+                return Collections.singletonList(new InclusionExclusionPattern(Collections.<String>emptyList(), false));
+            }
+        }
 
             // sort in the descending order of the duration
             List<TestClass> sorted = new ArrayList<>(data.values());
@@ -235,7 +288,6 @@ public class ParallelTestExecutor extends Builder {
                 }
             }
             return r;
-        }
     }
 
     /**
@@ -311,7 +363,7 @@ public class ParallelTestExecutor extends Builder {
         for (int i = 0; i < NUMBER_OF_BUILDS_TO_SEARCH; i++) {// limit the search to a small number to avoid loading too much
             b = b.getPreviousBuild();
             if (b == null) break;
-            if(!RESULTS_OF_BUILDS_TO_CONSIDER.contains(b.getResult())) continue;
+            if(!RESULTS_OF_BUILDS_TO_CONSIDER.contains(b.getResult()) || b.isBuilding()) continue;
 
             AbstractTestResultAction tra = b.getAction(AbstractTestResultAction.class);
             if (tra == null) continue;
@@ -342,10 +394,18 @@ public class ParallelTestExecutor extends Builder {
         }
     }
 
-    static Predicate<FlowNode> stageNamePredicate(@Nonnull String stageName) {
-        // Arrays.asList in to prevent compiler warning due to unchecked generics/varargs whackiness.
-        return Predicates.and(Arrays.asList(new NodeStepTypePredicate("stage"),
-                FlowScanningUtils.hasActionPredicate(LabelAction.class),
-                new NodeDisplayNamePredicate(stageName)));
+    private static class StageNamePredicate implements Predicate<FlowNode> {
+        private final String stageName;
+        public StageNamePredicate(@NonNull String stageName) {
+            this.stageName = stageName;
+        }
+        @Override
+        public boolean apply(@Nullable FlowNode input) {
+            if (input != null) {
+                LabelAction labelAction = input.getPersistentAction(LabelAction.class);
+                return labelAction != null && stageName.equals(labelAction.getDisplayName());
+            }
+            return false;
+        }
     }
 }

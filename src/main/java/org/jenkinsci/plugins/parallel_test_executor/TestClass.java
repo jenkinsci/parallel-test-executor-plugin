@@ -9,8 +9,9 @@ import org.jenkinsci.plugins.parallel_test_executor.ParallelTestExecutor.Knapsac
  */
 @SuppressFBWarnings(value="EQ_COMPARETO_USE_OBJECT_EQUALS", justification="Cf. justification in Knapsack.")
 public class TestClass implements Comparable<TestClass> {
-    String className;
-    long duration;
+
+    final String className;
+    final long duration;
     /**
      * Knapsack that this test class belongs to.
      */
@@ -24,6 +25,12 @@ public class TestClass implements Comparable<TestClass> {
             pkgName += '.';
         this.className = pkgName+cr.getName();
         this.duration = (long)(cr.getDuration()*1000);  // milliseconds is a good enough precision for us
+    }
+
+    //for test estimation for first run
+    public TestClass(String className){
+        this.className = className;
+        duration = 10;
     }
 
     public int compareTo(TestClass that) {

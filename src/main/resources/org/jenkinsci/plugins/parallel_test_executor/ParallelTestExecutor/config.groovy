@@ -1,7 +1,7 @@
 package org.jenkinsci.plugins.parallel_test_executor.ParallelTestExecutor
 
 import jenkins.model.Jenkins
-import org.jenkinsci.plugins.parallel_test_executor.Parallelism;
+import org.jenkinsci.plugins.parallel_test_executor.Parallelism
 
 def f = namespace(lib.FormTagLib)
 
@@ -20,6 +20,11 @@ f.entry(title:"Degree of parallelism", field:"parallelism") {
 f.entry(title:"Test report directory in the test job", field:"testReportFiles") {
     f.textbox()
 }
+
+f.entry(title:"Estimate tests from file sources", field:"estimateTestsFromFiles") {
+    f.checkbox()
+}
+
 f.block {
     f.entry(title:'Parameters for test job', help:descriptor.getHelpFile('parameters')) {
         f.repeatableHeteroProperty(
