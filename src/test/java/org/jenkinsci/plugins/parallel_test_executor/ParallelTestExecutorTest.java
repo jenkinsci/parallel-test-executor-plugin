@@ -138,4 +138,18 @@ public class ParallelTestExecutorTest {
         jenkinsRule.assertLogContains("allSplits[0]: includes=false list=[one.java, one.class, two.java, two.class]", b2);
         jenkinsRule.assertLogContains("allSplits[1]: includes=true list=[one.java, one.class, two.java, two.class]", b2);
     }
+
+    @Issue("JENKINS-47206")
+    @Test public void estimateTestsFromFiles() throws Exception {
+        jenkinsRule.createSlave("remote", null, null);
+        WorkflowJob p = jenkinsRule.jenkins.createProject(WorkflowJob.class, "p");
+        p.setDefinition(new CpsFlowDefinition("" +
+            "node('remote') {\n" +
+            "  writeFile file: 'src/test/java/TopTest.java', text: ''\n" +
+            "  writeFile file: 'subdir/src/test/java/some/pkg/OtherTest.java', text: ''\n" +
+            "  echo(/splits: ${splitTests(parallelism: count(2), estimateTestsFromFiles: true).flatten().sort()}/)\n" +
+            "}", true));
+        jenkinsRule.assertLogContains("splits: [TopTest.class, TopTest.java, some/pkg/OtherTest.class, some/pkg/OtherTest.java]", jenkinsRule.buildAndAssertSuccess(p));
+    }
+
 }

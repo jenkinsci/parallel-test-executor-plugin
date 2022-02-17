@@ -28,6 +28,7 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assume.assumeThat;
+import org.jvnet.hudson.test.Issue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -126,6 +127,7 @@ public class ParallelTestExecutorUnitTest {
         assertEquals("exclusions set should contain all elements included by inclusions set", inclusions, exclusions);
     }
 
+    @Issue("JENKINS-47206")
     @Test
     public void findTestInJavaProjectDirectory(){
         CountDrivenParallelism parallelism = new CountDrivenParallelism(5);
@@ -133,6 +135,7 @@ public class ParallelTestExecutorUnitTest {
         assertEquals(5, splits.size());
     }
 
+    @Issue("JENKINS-47206")
     @Test
     public void findTestOfJavaProjectDirectoryInWorkspace(){
         CountDrivenParallelism parallelism = new CountDrivenParallelism(5);
