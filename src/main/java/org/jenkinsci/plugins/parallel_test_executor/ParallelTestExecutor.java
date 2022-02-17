@@ -161,8 +161,6 @@ public class ParallelTestExecutor extends Builder {
             return Collections.emptyMap();
         }
         Map<String, TestClass> data = new TreeMap<>();
-        final String baseDir = workspace.getRemote();
-        String separator = null;
         final List<String> testFilesExpression = new ArrayList<>();
         testFilesExpression.add("**/src/test/java/**/Test*.java");
         testFilesExpression.add("**/src/test/java/**/*Test.java");
