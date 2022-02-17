@@ -144,7 +144,7 @@ public class ParallelTestExecutorUnitTest {
         expectedTests.add("FirstTest");
         expectedTests.add("SecondTest");
 
-        expectedTests.add("somepackage" + File.separator + "ThirdTest");
+        expectedTests.add("somepackage/ThirdTest");
         expectedTests.add("ThirdTest");
         expectedTests.add("FourthTest");
         expectedTests.add("FifthTest");
