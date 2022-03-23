@@ -17,8 +17,6 @@ import hudson.tasks.junit.JUnitResultArchiver;
 import hudson.tasks.test.AbstractTestResultAction;
 import hudson.tasks.test.TabulatedResult;
 import hudson.tasks.test.TestResult;
-import jenkins.security.MasterToSlaveCallable;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.workflow.actions.LabelAction;
 import org.jenkinsci.plugins.workflow.flow.FlowExecution;
@@ -38,6 +36,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
+import hudson.Functions;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author Kohsuke Kawaguchi
@@ -154,49 +155,29 @@ public class ParallelTestExecutor extends Builder {
         return true;
     }
 
+    private static final Pattern TEST = Pattern.compile(".+/src/test/java/(.+)[.]java");
     public static Map<String, TestClass>  findTestResultsInDirectory(Run<?,?> build, TaskListener listener, @CheckForNull FilePath workspace){
         if(workspace==null){
             return Collections.emptyMap();
         }
-        String[] tests = null;
         Map<String, TestClass> data = new TreeMap<>();
-        final String baseDir = workspace.getRemote();
-        String separator = null;
         final List<String> testFilesExpression = new ArrayList<>();
         testFilesExpression.add("**/src/test/java/**/Test*.java");
         testFilesExpression.add("**/src/test/java/**/*Test.java");
         testFilesExpression.add("**/src/test/java/**/*Tests.java");
         testFilesExpression.add("**/src/test/java/**/*TestCase.java");
+        FilePath[] tests;
         try {
-            separator = workspace.act(new MasterToSlaveCallable<String, Throwable>() {
-
-                @Override
-                public String call() throws Throwable {
-                    return File.separator;
-                }
-            });
-            tests = workspace.act(new MasterToSlaveCallable<String[], Throwable>() {
-
-                @Override
-                public String[] call() throws Throwable {
-                    return Util.createFileSet(new File(baseDir), StringUtils.join(testFilesExpression,",")).getDirectoryScanner().getIncludedFiles();
-                }
-            });
-
+            tests = workspace.list(StringUtils.join(testFilesExpression, ","));
         } catch (Throwable throwable) {
-            throwable.printStackTrace(listener.getLogger());
+            Functions.printStackTrace(throwable, listener.getLogger());
             return data;
         }
-        if(separator.equals("\\")){
-            //for regex expression
-            separator = separator + separator;
-        }
-        for(String test : tests){
-            String path = StringUtils.join(new String[]{"src", "test", "java"}, separator);
-            test = test.split(path + separator)[1];
-            //remove suffix of file
-            test = FilenameUtils.removeExtension(test);
-            data.put(test, new TestClass(test));
+        for (FilePath test : tests) {
+            Matcher m = TEST.matcher(test.getRemote().replace('\\', '/'));
+            assert m.matches();
+            String relativePath = m.group(1); // e.g. pkg/subpkg/SomeTest
+            data.put(relativePath, new TestClass(relativePath));
         }
         return data;
 
