@@ -1,2 +1,1 @@
 _extends: .github
-tag-template: parallel-test-executor-$NEXT_MINOR_VERSION
