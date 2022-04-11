@@ -174,8 +174,11 @@ public class ParallelTestExecutor extends Builder {
             return data;
         }
         for (FilePath test : tests) {
-            Matcher m = TEST.matcher(test.getRemote().replace('\\', '/'));
-            assert m.matches();
+            String testPath = test.getRemote().replace('\\', '/');
+            Matcher m = TEST.matcher(testPath);
+            if (!m.matches()) {
+             throw new IllegalStateException(testPath + " didn't match expected format");
+            }
             String relativePath = m.group(1); // e.g. pkg/subpkg/SomeTest
             data.put(relativePath, new TestClass(relativePath));
         }
