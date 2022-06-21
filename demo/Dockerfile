@@ -3,7 +3,7 @@ FROM jenkins/jenkins:2.319.3
 USER root
 
 ENV MAVEN_VERSION=3.8.4
-RUN curl -s https://dlcdn.apache.org/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar xvfCz - /opt && \
+RUN curl -s https://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar xvfCz - /opt && \
     ln -sv /opt/apache-maven-$MAVEN_VERSION/bin/mvn /usr/local/bin/mvn
 
 ADD repo /tmp/repo
