@@ -348,7 +348,11 @@ public class ParallelTestExecutor extends Builder {
         TestResult result = getTestResult(b.getParent(), b, listener);
         if (result == null) {
             for (PreviousBuildFinder pbf : ExtensionList.lookup(PreviousBuildFinder.class)) {
-                result = getTestResult(b.getParent(), pbf.find(b, listener), listener);
+                Run<?, ?> otherBuild = pbf.find(b, listener);
+                if (otherBuild == null) {
+                    continue;
+                }
+                result = getTestResult(b.getParent(), otherBuild, listener);
                 if (result != null) {
                     break;
                 }
