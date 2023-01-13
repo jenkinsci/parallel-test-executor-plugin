@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.AbortException;
 import hudson.Extension;
+import hudson.ExtensionList;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.Util;
@@ -344,6 +345,20 @@ public class ParallelTestExecutor extends Builder {
     }
 
     private static TestResult findPreviousTestResult(Run<?, ?> b, TaskListener listener) {
+        TestResult result = getTestResult(b.getParent(), b, listener);
+        if (result == null) {
+            for (PreviousBuildFinder pbf : ExtensionList.lookup(PreviousBuildFinder.class)) {
+                result = getTestResult(b.getParent(), pbf.find(b, listener), listener);
+                if (result != null) {
+                    break;
+                }
+            }
+        }
+        return result;
+    }
+
+    private static TestResult getTestResult(Job<?, ?> originProject, Run<?, ?> b, TaskListener listener) {
+        TestResult result = null;
         for (int i = 0; i < NUMBER_OF_BUILDS_TO_SEARCH; i++) {// limit the search to a small number to avoid loading too much
             b = b.getPreviousBuild();
             if (b == null) break;
@@ -354,11 +369,12 @@ public class ParallelTestExecutor extends Builder {
 
             Object o = tra.getResult();
             if (o instanceof TestResult) {
-                listener.getLogger().printf("Using build #%d as reference%n", b.getNumber());
-                return (TestResult) o;
+                listener.getLogger().printf("Using build %s#%d as reference%n", originProject != b.getParent() ? b.getParent().getFullName() : "", b.getNumber());
+                result = (TestResult) o;
+                break;
             }
         }
-        return null;    // couldn't find it
+        return result;
     }
 
     @Extension
