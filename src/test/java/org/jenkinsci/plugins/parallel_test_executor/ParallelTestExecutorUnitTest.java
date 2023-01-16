@@ -57,6 +57,8 @@ public class ParallelTestExecutorUnitTest {
     public void setUp() throws Exception {
         when(build.getPreviousBuild()).thenReturn((Run)previousBuild);
         when(previousBuild.getResult()).thenReturn(Result.SUCCESS);
+        when(previousBuild.getUrl()).thenReturn("job/some-project/1");
+        when(previousBuild.getDisplayName()).thenReturn("#1");
         when(listener.getLogger()).thenReturn(System.err);
         when(previousBuild.getAction(eq(AbstractTestResultAction.class))).thenReturn(action);
     }

@@ -5,10 +5,10 @@ import com.google.common.collect.ImmutableSet;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.AbortException;
 import hudson.Extension;
-import hudson.ExtensionList;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.Util;
+import hudson.console.ModelHyperlinkNote;
 import hudson.model.*;
 import hudson.plugins.parameterizedtrigger.*;
 import hudson.tasks.BuildStepDescriptor;
@@ -348,8 +348,10 @@ public class ParallelTestExecutor extends Builder {
 
     private static TestResult findPreviousTestResult(Run<?, ?> b, TaskListener listener) {
         Job<?, ?> project = b.getParent();
-        TestResult result = getTestResult(project, b, listener);
+        // Look for test results starting with the previous build
+        TestResult result = getTestResult(project, b.getPreviousBuild(), listener);
         if (result == null) {
+            // Look for test results from the target branch builds if this is a change request.
             SCMHead head = SCMHead.HeadByItem.findHead(project);
             if (head instanceof ChangeRequestSCMHead) {
                 SCMHead target = ((ChangeRequestSCMHead) head).getTarget();
@@ -366,19 +368,19 @@ public class ParallelTestExecutor extends Builder {
     private static TestResult getTestResult(Job<?, ?> originProject, Run<?, ?> b, TaskListener listener) {
         TestResult result = null;
         for (int i = 0; i < NUMBER_OF_BUILDS_TO_SEARCH; i++) {// limit the search to a small number to avoid loading too much
-            b = b.getPreviousBuild();
             if (b == null) break;
-            if(!RESULTS_OF_BUILDS_TO_CONSIDER.contains(b.getResult()) || b.isBuilding()) continue;
+            if (!RESULTS_OF_BUILDS_TO_CONSIDER.contains(b.getResult()) || b.isBuilding()) continue;
 
             AbstractTestResultAction tra = b.getAction(AbstractTestResultAction.class);
-            if (tra == null) continue;
-
-            Object o = tra.getResult();
-            if (o instanceof TestResult) {
-                listener.getLogger().printf("Using build %s#%d as reference%n", originProject != b.getParent() ? b.getParent().getFullName() : "", b.getNumber());
-                result = (TestResult) o;
-                break;
+            if (tra != null) {
+                Object o = tra.getResult();
+                if (o instanceof TestResult) {
+                    listener.getLogger().printf("Using build %s as reference%n", ModelHyperlinkNote.encodeTo('/' + b.getUrl(), originProject != b.getParent() ? b.getFullDisplayName() : b.getDisplayName()));
+                    result = (TestResult) o;
+                    break;
+                }
             }
+            b = b.getPreviousBuild();
         }
         return result;
     }
