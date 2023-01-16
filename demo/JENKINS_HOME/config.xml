@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <hudson>
   <disabledAdministrativeMonitors/>
-  <version>1.0</version>
+  <version>2.375.2</version>
   <numExecutors>0</numExecutors>
   <mode>NORMAL</mode>
   <useSecurity>true</useSecurity>
@@ -15,15 +15,14 @@
   <viewsTabBar class="hudson.views.DefaultViewsTabBar"/>
   <myViewsTabBar class="hudson.views.DefaultMyViewsTabBar"/>
   <clouds>
-    <org.jenkinci.plugins.mock__slave.MockCloud>
-      <name>mock</name>
+    <org.jenkinci.plugins.mock__slave.MockCloud plugin="mock-slave@109.vac7845f10470">
+    <name>mock</name>
       <mode>NORMAL</mode>
       <numExecutors>1</numExecutors>
       <labelString></labelString>
       <oneShot>false</oneShot>
     </org.jenkinci.plugins.mock__slave.MockCloud>
   </clouds>
-   <slaves/>
   <scmCheckoutRetryCount>0</scmCheckoutRetryCount>
   <views>
     <hudson.model.AllView>
@@ -34,7 +33,7 @@
       <properties class="hudson.model.View$PropertyList"/>
     </hudson.model.AllView>
   </views>
-  <primaryView>All</primaryView>
+  <primaryView>all</primaryView>
   <slaveAgentPort>0</slaveAgentPort>
   <label></label>
   <crumbIssuer class="hudson.security.csrf.DefaultCrumbIssuer">
@@ -42,4 +41,5 @@
   </crumbIssuer>
   <nodeProperties/>
   <globalNodeProperties/>
+  <nodeRenameMigrationNeeded>false</nodeRenameMigrationNeeded>
 </hudson>
