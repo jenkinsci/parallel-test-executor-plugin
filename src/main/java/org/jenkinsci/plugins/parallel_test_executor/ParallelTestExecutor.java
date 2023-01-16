@@ -18,6 +18,8 @@ import hudson.tasks.junit.JUnitResultArchiver;
 import hudson.tasks.test.AbstractTestResultAction;
 import hudson.tasks.test.TabulatedResult;
 import hudson.tasks.test.TestResult;
+import jenkins.scm.api.SCMHead;
+import jenkins.scm.api.mixin.ChangeRequestSCMHead;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.workflow.actions.LabelAction;
 import org.jenkinsci.plugins.workflow.flow.FlowExecution;
@@ -345,21 +347,21 @@ public class ParallelTestExecutor extends Builder {
     }
 
     private static TestResult findPreviousTestResult(Run<?, ?> b, TaskListener listener) {
-        TestResult result = getTestResult(b.getParent(), b, listener);
+        Job<?, ?> project = b.getParent();
+        TestResult result = getTestResult(project, b, listener);
         if (result == null) {
-            for (PreviousBuildFinder pbf : ExtensionList.lookup(PreviousBuildFinder.class)) {
-                Run<?, ?> otherBuild = pbf.find(b, listener);
-                if (otherBuild == null) {
-                    continue;
-                }
-                result = getTestResult(b.getParent(), otherBuild, listener);
-                if (result != null) {
-                    break;
+            SCMHead head = SCMHead.HeadByItem.findHead(project);
+            if (head instanceof ChangeRequestSCMHead) {
+                SCMHead target = ((ChangeRequestSCMHead) head).getTarget();
+                Item targetBranch = project.getParent().getItem(target.getName());
+                if (targetBranch != null && targetBranch instanceof Job) {
+                    result = getTestResult(project, ((Job<?, ?>) targetBranch).getLastBuild(), listener);
                 }
             }
         }
         return result;
     }
+
 
     private static TestResult getTestResult(Job<?, ?> originProject, Run<?, ?> b, TaskListener listener) {
         TestResult result = null;
