@@ -13,7 +13,6 @@ services:
       - USER_UID=1000
       - USER_GID=1000
       - GITEA__server__HTTP_PORT=3000
-      - GITEA__server__SSH_PORT=22
       - GITEA__server__ROOT_URL=http://localhost:3000/
       - GITEA__server__DOMAIN=localhost
       - GITEA__database__DB_TYPE=sqlite3
@@ -27,7 +26,6 @@ services:
       - /etc/localtime:/etc/localtime:ro
     ports:
       - "3000:3000"
-      - "222:22"
   jenkins:
       container_name: jenkins
       networks:
