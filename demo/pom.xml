@@ -5,15 +5,14 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>4.34</version>
+        <version>4.53</version>
         <relativePath />
     </parent>
     <artifactId>parallel-test-executor-demo</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>hpi</packaging>
     <properties>
-        <jenkins.version>2.319.3</jenkins.version>
-        <java.level>8</java.level>
+        <jenkins.version>2.361.4</jenkins.version>
     </properties>
     <name>Parallel Test Executor Demo</name>
     <repositories>
@@ -32,7 +31,7 @@
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>parallel-test-executor</artifactId>
-            <version>1.13</version>
+            <version>999999-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
         <!-- cf. https://stackoverflow.com/q/45761521/12916 -->
@@ -47,15 +46,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.jenkins-ci.plugins.workflow</groupId>
-            <artifactId>workflow-cps-global-lib</artifactId>
+            <groupId>io.jenkins.plugins</groupId>
+            <artifactId>pipeline-groovy-lib</artifactId>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.commons</groupId>
-                    <artifactId>commons-lang3</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins.workflow</groupId>
@@ -111,31 +104,21 @@
             <version>82.vc2a_3f0f7a_291</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.jenkins-ci.plugins</groupId>
+            <artifactId>gitea</artifactId>
+            <version>1.4.5</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>io.jenkins.tools.bom</groupId>
-                <artifactId>bom-2.319.x</artifactId>
-                <version>1148.v7261f385f859</version>
+                <artifactId>bom-2.361.x</artifactId>
+                <version>1775.vf0577a_a_01778</version>
                 <scope>import</scope>
                 <type>pom</type>
-            </dependency>
-            <dependency>
-                <groupId>org.jenkins-ci.plugins</groupId>
-                <artifactId>parameterized-trigger</artifactId>
-                <version>2.43</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.jenkins-ci</groupId>
-                        <artifactId>symbol-annotation</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.jenkins-ci.main</groupId>
-                <artifactId>maven-plugin</artifactId>
-                <version>3.16</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
