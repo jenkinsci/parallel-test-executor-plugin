@@ -16,7 +16,7 @@
   <myViewsTabBar class="hudson.views.DefaultMyViewsTabBar"/>
   <clouds>
     <org.jenkinci.plugins.mock__slave.MockCloud plugin="mock-slave@109.vac7845f10470">
-    <name>mock</name>
+      <name>mock</name>
       <mode>NORMAL</mode>
       <numExecutors>1</numExecutors>
       <labelString></labelString>
