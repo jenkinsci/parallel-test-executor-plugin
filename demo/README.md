@@ -1,7 +1,7 @@
 # Prerequisites
 
 * docker
-* docker-compose
+* docker compose
 
 # Running
 

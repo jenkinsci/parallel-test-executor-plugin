@@ -14,7 +14,7 @@ copy-plugins:
 PHONY: clean
 clean:
 	rm -rf target
-	docker-compose down -v
+	docker compose down -v
 	docker image rm demo-jenkins || true
 
 PHONY: run

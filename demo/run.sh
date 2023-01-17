@@ -5,13 +5,13 @@ function gitea_create_admin_user() {
   local username; username="${1:?}"
   local email; email="${2:?}"
   mkdir -p target
-  [ -f target/gitea_output.txt ] || docker-compose exec -u 1000:1000 gitea gitea admin user create --admin --username "$username" --random-password --email "$email" > target/gitea_output.txt
+  [ -f target/gitea_output.txt ] || docker compose exec -u 1000:1000 gitea gitea admin user create --admin --username "$username" --random-password --email "$email" > target/gitea_output.txt
 }
 
 function gitea_generate_access_token() {
   local username; username="${1:?}"
   mkdir -p target
-  [ -f target/gitea_token.txt ] || docker-compose exec -u 1000:1000 gitea gitea admin user generate-access-token --username "$username" --raw > target/gitea_token.txt
+  [ -f target/gitea_token.txt ] || docker compose exec -u 1000:1000 gitea gitea admin user generate-access-token --username "$username" --raw > target/gitea_token.txt
 }
 
 function gitea_token() {
