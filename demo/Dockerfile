@@ -25,6 +25,3 @@ RUN cd /tmp/lib && \
 ENV JAVA_OPTS -Dhudson.model.LoadStatistics.clock=1000 -Dhudson.Main.development=true -Dhudson.plugins.git.GitSCM.ALLOW_LOCAL_CHECKOUT=true
 
 ADD JENKINS_HOME /usr/share/jenkins/ref
-
-HEALTHCHECK --interval=5m --timeout=3s \
-  CMD curl -f http://localhost:8080/ || exit 1
