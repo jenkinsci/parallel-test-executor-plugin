@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euxo pipefail
+cd $(dirname $0)
 export TOKEN=$(cat target/gitea_token.txt)
 pushd target/repo > /dev/null
   export BRANCH_NAME=experiment-$(openssl rand -hex 6)
