@@ -1,0 +1,11 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<org.jenkinsci.plugin.gitea.servers.GiteaServers plugin="gitea@1.4.5">
+    <servers>
+        <org.jenkinsci.plugin.gitea.servers.GiteaServer>
+            <displayName>gitea</displayName>
+            <serverUrl>http://gitea:3000</serverUrl>
+            <manageHooks>false</manageHooks>
+            <credentialsId>gitea</credentialsId>
+        </org.jenkinsci.plugin.gitea.servers.GiteaServer>
+    </servers>
+</org.jenkinsci.plugin.gitea.servers.GiteaServers>

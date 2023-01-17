@@ -3,24 +3,37 @@
   <actions/>
   <description></description>
   <sources>
-    <jenkins.branch.BranchSource>
-      <source class="jenkins.plugins.git.GitSCMSource">
-        <remote>/tmp/repo</remote>
-        <credentialsId></credentialsId>
-        <includes>*</includes>
-        <excludes></excludes>
-        <ignoreOnPushNotifications>false</ignoreOnPushNotifications>
+    <jenkins.branch.BranchSource plugin="branch-api@2.1051.v9985666b_f6cc">
+      <source class="org.jenkinsci.plugin.gitea.GiteaSCMSource" plugin="gitea@1.4.5">
+        <id>6126b51e-8b62-413c-9e82-333d0cf58bdb</id>
+        <serverUrl>http://gitea:3000</serverUrl>
+        <repoOwner>jenkins</repoOwner>
+        <repository>demo</repository>
+        <credentialsId>gitea</credentialsId>
+        <traits>
+          <org.jenkinsci.plugin.gitea.BranchDiscoveryTrait>
+            <strategyId>1</strategyId>
+          </org.jenkinsci.plugin.gitea.BranchDiscoveryTrait>
+          <org.jenkinsci.plugin.gitea.OriginPullRequestDiscoveryTrait>
+            <strategyId>1</strategyId>
+          </org.jenkinsci.plugin.gitea.OriginPullRequestDiscoveryTrait>
+          <org.jenkinsci.plugin.gitea.ForkPullRequestDiscoveryTrait>
+            <strategyId>1</strategyId>
+            <trust class="org.jenkinsci.plugin.gitea.ForkPullRequestDiscoveryTrait$TrustContributors"/>
+          </org.jenkinsci.plugin.gitea.ForkPullRequestDiscoveryTrait>
+        </traits>
       </source>
       <strategy class="jenkins.branch.DefaultBranchPropertyStrategy">
         <properties class="empty-list"/>
       </strategy>
     </jenkins.branch.BranchSource>
   </sources>
-  <deadBranchStrategy class="jenkins.branch.DefaultDeadBranchStrategy">
+  <orphanedItemStrategy class="com.cloudbees.hudson.plugins.folder.computed.DefaultOrphanedItemStrategy" plugin="cloudbees-folder@6.758.vfd75d09eea_a_1">
     <pruneDeadBranches>true</pruneDeadBranches>
     <daysToKeep>-1</daysToKeep>
-    <numToKeep>1</numToKeep>
-  </deadBranchStrategy>
+    <numToKeep>-1</numToKeep>
+    <abortBuilds>false</abortBuilds>
+  </orphanedItemStrategy>
   <factory class="org.jenkinsci.plugins.workflow.multibranch.WorkflowBranchProjectFactory">
     <owner class="org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject" reference="../.."/>
   </factory>
