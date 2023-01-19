@@ -1,11 +1,13 @@
 package org.jenkinsci.plugins.parallel_test_executor;
 
 import hudson.FilePath;
+import hudson.model.Job;
 import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.tasks.junit.TestResult;
 import hudson.tasks.test.AbstractTestResultAction;
+import java.io.IOException;
 import org.apache.tools.ant.DirectoryScanner;
 import org.hamcrest.Matchers;
 import org.junit.Before;
@@ -27,10 +29,13 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assume.assumeThat;
 import org.jvnet.hudson.test.Issue;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -153,5 +158,26 @@ public class ParallelTestExecutorUnitTest {
         assertEquals("Result does not contains expected tests.", expectedTests, data.keySet());
         List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, build, listener, true, null, new FilePath(scanner.getBasedir()), true);
         assertEquals(5, splits.size());
+    }
+
+    @Test
+    public void previousBuildIsOngoing() throws IOException {
+        Job project = mock(Job.class);
+        Run previousPreviousBuild = mock(Run.class);
+        when(previousBuild.getParent()).thenReturn(project);
+        when(previousBuild.getResult()).thenReturn(null);
+        when(previousBuild.isBuilding()).thenReturn(true);
+        when(previousBuild.getPreviousBuild()).thenReturn(previousPreviousBuild);
+        when(previousBuild.getAction(eq(AbstractTestResultAction.class))).thenReturn(null);
+        when(previousPreviousBuild.getParent()).thenReturn(project);
+        when(previousPreviousBuild.getResult()).thenReturn(Result.SUCCESS);
+        when(previousPreviousBuild.getAction(eq(AbstractTestResultAction.class))).thenReturn(action);
+        when(previousPreviousBuild.getUrl()).thenReturn("job/some-project/1");
+        when(previousPreviousBuild.getDisplayName()).thenReturn("#1");
+        TestResult testResult = new TestResult(0L, scanner, false);
+        testResult.tally();
+        when(action.getResult()).thenReturn(testResult);
+
+        assertNotNull(ParallelTestExecutor.getTestResult(project, previousBuild, listener));
     }
 }

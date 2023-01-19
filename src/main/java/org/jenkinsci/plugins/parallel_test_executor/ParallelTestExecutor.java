@@ -365,19 +365,19 @@ public class ParallelTestExecutor extends Builder {
     }
 
 
-    private static TestResult getTestResult(Job<?, ?> originProject, Run<?, ?> b, TaskListener listener) {
+    static TestResult getTestResult(Job<?, ?> originProject, Run<?, ?> b, TaskListener listener) {
         TestResult result = null;
         for (int i = 0; i < NUMBER_OF_BUILDS_TO_SEARCH; i++) {// limit the search to a small number to avoid loading too much
             if (b == null) break;
-            if (!RESULTS_OF_BUILDS_TO_CONSIDER.contains(b.getResult()) || b.isBuilding()) continue;
-
-            AbstractTestResultAction tra = b.getAction(AbstractTestResultAction.class);
-            if (tra != null) {
-                Object o = tra.getResult();
-                if (o instanceof TestResult) {
-                    listener.getLogger().printf("Using build %s as reference%n", ModelHyperlinkNote.encodeTo('/' + b.getUrl(), originProject != b.getParent() ? b.getFullDisplayName() : b.getDisplayName()));
-                    result = (TestResult) o;
-                    break;
+            if (RESULTS_OF_BUILDS_TO_CONSIDER.contains(b.getResult()) && !b.isBuilding()) {
+                AbstractTestResultAction tra = b.getAction(AbstractTestResultAction.class);
+                if (tra != null) {
+                    Object o = tra.getResult();
+                    if (o instanceof TestResult) {
+                        listener.getLogger().printf("Using build %s as reference%n", ModelHyperlinkNote.encodeTo('/' + b.getUrl(), originProject != b.getParent() ? b.getFullDisplayName() : b.getDisplayName()));
+                        result = (TestResult) o;
+                        break;
+                    }
                 }
             }
             b = b.getPreviousBuild();
