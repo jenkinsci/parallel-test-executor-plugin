@@ -164,11 +164,8 @@ public class ParallelTestExecutorUnitTest {
     public void previousBuildIsOngoing() throws IOException {
         Job project = mock(Job.class);
         Run previousPreviousBuild = mock(Run.class);
-        when(previousBuild.getParent()).thenReturn(project);
         when(previousBuild.getResult()).thenReturn(null);
-        when(previousBuild.isBuilding()).thenReturn(true);
         when(previousBuild.getPreviousBuild()).thenReturn(previousPreviousBuild);
-        when(previousBuild.getAction(eq(AbstractTestResultAction.class))).thenReturn(null);
         when(previousPreviousBuild.getParent()).thenReturn(project);
         when(previousPreviousBuild.getResult()).thenReturn(Result.SUCCESS);
         when(previousPreviousBuild.getAction(eq(AbstractTestResultAction.class))).thenReturn(action);
