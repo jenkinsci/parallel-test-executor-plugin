@@ -377,7 +377,7 @@ public class ParallelTestExecutor extends Builder {
                         TestResult tr = (TestResult) o;
                         String hyperlink = ModelHyperlinkNote.encodeTo('/' + b.getUrl(), originProject != b.getParent() ? b.getFullDisplayName() : b.getDisplayName());
                         if (tr.getTotalCount() == 0) {
-                            listener.getLogger().printf("Build %s has no loadable test results (supposed count %d), skipping%n", tra.getTotalCount(), hyperlink);
+                            listener.getLogger().printf("Build %s has no loadable test results (supposed count %d), skipping%n", hyperlink, tra.getTotalCount());
                         } else {
                             listener.getLogger().printf("Using build %s as reference%n", hyperlink);
                             result = tr;
