@@ -7,7 +7,7 @@
     <relativePath/>
   </parent>
   <artifactId>parallel-test-executor</artifactId>
-  <version>${changelist}</version>
+  <version>383.${changelist}</version>
   <packaging>hpi</packaging>
   <name>Parallel Test Executor Plugin</name>
   <url>https://github.com/jenkinsci/parallel-test-executor-plugin</url>
