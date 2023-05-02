@@ -6,6 +6,9 @@ import hudson.model.ParametersAction;
 import hudson.model.ParametersDefinitionProperty;
 import hudson.model.StringParameterDefinition;
 import hudson.model.StringParameterValue;
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import org.apache.commons.io.FileUtils;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.cps.SnippetizerTester;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
@@ -96,6 +99,29 @@ public class ParallelTestExecutorTest {
         jenkinsRule.waitForMessage("Lock acquired on", b1);
         WorkflowRun b2 = p.scheduleBuild2(0, new ParametersAction(new StringParameterValue("SLEEP", "0"))).get();
         jenkinsRule.assertLogContains("splits.size=1", b2);
+    }
+
+    @Issue("JENKINS-71139")
+    @Test
+    public void unloadableTestResult() throws Exception {
+        {
+            WorkflowJob p = jenkinsRule.jenkins.createProject(WorkflowJob.class, "p");
+            p.setDefinition(new CpsFlowDefinition(
+                "  node {\n" +
+                "    writeFile file: 'TEST-one.xml', text: $/<testsuite name='one'><testcase name='x'/></testsuite>/$\n" +
+                "    junit 'TEST-*.xml'\n" +
+                "  }\n", true));
+            jenkinsRule.buildAndAssertSuccess(p);
+            WorkflowRun b2 = jenkinsRule.buildAndAssertSuccess(p);
+            FileUtils.write(new File(b2.getRootDir(), "junitResult.xml"), "<broken", StandardCharsets.UTF_8);
+            p.setDefinition(new CpsFlowDefinition("splitTests parallelism: count(2)", true));
+        }
+        jenkinsRule.jenkins.reload(); // TODO use JenkinsSessionRule
+        {
+            WorkflowRun b3 = jenkinsRule.buildAndAssertSuccess(jenkinsRule.jenkins.getItemByFullName("p", WorkflowJob.class));
+            jenkinsRule.assertLogContains("Build #2 has no loadable test results (supposed count 1), skipping", b3);
+            jenkinsRule.assertLogContains("Using build #1 as reference", b3);
+        }
     }
 
     @Issue("JENKINS-27395")

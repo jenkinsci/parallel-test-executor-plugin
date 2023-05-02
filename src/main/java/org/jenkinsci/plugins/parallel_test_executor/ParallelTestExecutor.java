@@ -374,9 +374,15 @@ public class ParallelTestExecutor extends Builder {
                 if (tra != null) {
                     Object o = tra.getResult();
                     if (o instanceof TestResult) {
-                        listener.getLogger().printf("Using build %s as reference%n", ModelHyperlinkNote.encodeTo('/' + b.getUrl(), originProject != b.getParent() ? b.getFullDisplayName() : b.getDisplayName()));
-                        result = (TestResult) o;
-                        break;
+                        TestResult tr = (TestResult) o;
+                        String hyperlink = ModelHyperlinkNote.encodeTo('/' + b.getUrl(), originProject != b.getParent() ? b.getFullDisplayName() : b.getDisplayName());
+                        if (tr.getTotalCount() == 0) {
+                            listener.getLogger().printf("Build %s has no loadable test results (supposed count %d), skipping%n", hyperlink, tra.getTotalCount());
+                        } else {
+                            listener.getLogger().printf("Using build %s as reference%n", hyperlink);
+                            result = tr;
+                            break;
+                        }
                     }
                 }
             }
