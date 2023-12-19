@@ -99,6 +99,8 @@ public class ParallelTestExecutorTest {
         jenkinsRule.waitForMessage("Lock acquired on", b1);
         WorkflowRun b2 = p.scheduleBuild2(0, new ParametersAction(new StringParameterValue("SLEEP", "0"))).get();
         jenkinsRule.assertLogContains("splits.size=1", b2);
+        b1.getExecutor().interrupt();
+        jenkinsRule.waitForCompletion(b1);
     }
 
     @Issue("JENKINS-71139")
