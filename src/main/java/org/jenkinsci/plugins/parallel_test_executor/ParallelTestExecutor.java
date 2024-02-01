@@ -1,5 +1,6 @@
 package org.jenkinsci.plugins.parallel_test_executor;
 
+import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.AbortException;
@@ -7,6 +8,7 @@ import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.Util;
+import hudson.console.ModelHyperlinkNote;
 import hudson.model.*;
 import hudson.plugins.parameterizedtrigger.*;
 import hudson.tasks.BuildStepDescriptor;
@@ -17,20 +19,30 @@ import hudson.tasks.junit.JUnitResultArchiver;
 import hudson.tasks.test.AbstractTestResultAction;
 import hudson.tasks.test.TabulatedResult;
 import hudson.tasks.test.TestResult;
+import jenkins.scm.api.SCMHead;
+import jenkins.scm.api.mixin.ChangeRequestSCMHead;
+import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.plugins.workflow.actions.LabelAction;
+import org.jenkinsci.plugins.workflow.flow.FlowExecution;
+import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner;
+import org.jenkinsci.plugins.workflow.graph.FlowNode;
+import org.jenkinsci.plugins.workflow.graphanalysis.DepthFirstScanner;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.commons.io.Charsets;
 
-import javax.annotation.CheckForNull;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
+import hudson.Functions;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author Kohsuke Kawaguchi
@@ -38,24 +50,26 @@ import javax.annotation.CheckForNull;
 public class ParallelTestExecutor extends Builder {
     public static final int NUMBER_OF_BUILDS_TO_SEARCH = 20;
     public static final ImmutableSet<Result> RESULTS_OF_BUILDS_TO_CONSIDER = ImmutableSet.of(Result.SUCCESS, Result.UNSTABLE);
-    private Parallelism parallelism;
 
-    private String testJob;
-    private String patternFile;
+    private final Parallelism parallelism;
+    private final String testJob;
+    private final String patternFile;
     private String includesPatternFile;
-    private String testReportFiles;
-    private boolean doNotArchiveTestResults = false;
-    private List<AbstractBuildParameters> parameters;
+    private final String testReportFiles;
+    private final boolean doNotArchiveTestResults;
+    private final List<AbstractBuildParameters> parameters;
     private TestMode testMode;
+    private final boolean estimateTestsFromFiles;
 
     @DataBoundConstructor
-    public ParallelTestExecutor(Parallelism parallelism, String testJob, String patternFile, String testReportFiles, boolean archiveTestResults, List<AbstractBuildParameters> parameters) {
+    public ParallelTestExecutor(Parallelism parallelism, String testJob, String patternFile, String testReportFiles, boolean archiveTestResults, List<AbstractBuildParameters> parameters, boolean estimateTestsFromFiles) {
         this.parallelism = parallelism;
         this.testJob = testJob;
         this.patternFile = patternFile;
         this.testReportFiles = testReportFiles;
         this.parameters = parameters;
         this.doNotArchiveTestResults = !archiveTestResults;
+        this.estimateTestsFromFiles = estimateTestsFromFiles;
     }
 
     public Parallelism getParallelism() {
@@ -137,11 +151,12 @@ public class ParallelTestExecutor extends Builder {
         }
         FilePath dir = workspace.child("test-splits");
         dir.deleteRecursive();
-        List<InclusionExclusionPattern> splits = findTestSplits(parallelism, build, listener, includesPatternFile != null, getTestMode());
+        List<InclusionExclusionPattern> splits = findTestSplits(parallelism, build, listener, includesPatternFile != null,
+                null, build.getWorkspace(), estimateTestsFromFiles, getTestMode());
         for (int i = 0; i < splits.size(); i++) {
             InclusionExclusionPattern pattern = splits.get(i);
             try (OutputStream os = dir.child("split." + i + "." + (pattern.isIncludes() ? "include" : "exclude") + ".txt").write();
-                 OutputStreamWriter osw = new OutputStreamWriter(os, Charsets.UTF_8);
+                 OutputStreamWriter osw = new OutputStreamWriter(os, StandardCharsets.UTF_8);
                  PrintWriter pw = new PrintWriter(osw)) {
                 for (String filePattern : pattern.getList()) {
                     pw.println(filePattern);
@@ -158,19 +173,74 @@ public class ParallelTestExecutor extends Builder {
         return true;
     }
 
-    static List<InclusionExclusionPattern> findTestSplits(Parallelism parallelism, Run<?,?> build, TaskListener listener, boolean generateInclusions, TestMode testMode) {
+    private static final Pattern TEST = Pattern.compile(".+/src/test/java/(.+)[.]java");
+    public static Map<String, TestEntity>  findTestResultsInDirectory(Run<?,?> build, TaskListener listener, @CheckForNull FilePath workspace){
+        if(workspace==null){
+            return Collections.emptyMap();
+        }
+        Map<String, TestEntity> data = new TreeMap<>();
+        final List<String> testFilesExpression = new ArrayList<>();
+        testFilesExpression.add("**/src/test/java/**/Test*.java");
+        testFilesExpression.add("**/src/test/java/**/*Test.java");
+        testFilesExpression.add("**/src/test/java/**/*Tests.java");
+        testFilesExpression.add("**/src/test/java/**/*TestCase.java");
+        FilePath[] tests;
+        try {
+            tests = workspace.list(StringUtils.join(testFilesExpression, ","));
+        } catch (Throwable throwable) {
+            Functions.printStackTrace(throwable, listener.getLogger());
+            return data;
+        }
+        for (FilePath test : tests) {
+            String testPath = test.getRemote().replace('\\', '/');
+            Matcher m = TEST.matcher(testPath);
+            if (!m.matches()) {
+             throw new IllegalStateException(testPath + " didn't match expected format");
+            }
+            String relativePath = m.group(1); // e.g. pkg/subpkg/SomeTest
+            data.put(relativePath, new TestClass(relativePath));
+        }
+        return data;
+
+    }
+
+    static List<InclusionExclusionPattern> findTestSplits(Parallelism parallelism, Run<?,?> build, TaskListener listener,
+                                                          boolean generateInclusions,
+                                                          @CheckForNull final String stageName, @CheckForNull FilePath workspace, boolean estimateTestsFromFiles, TestMode testMode) {
         TestResult tr = findPreviousTestResult(build, listener);
-        if (tr == null) {
-            listener.getLogger().println("No record available, so executing everything in one place");
-            return Collections.singletonList(new InclusionExclusionPattern(Collections.<String>emptyList(), false));
-        } else {
-            Map<String/*fully qualified class/case name*/, TestEntity> data = new TreeMap<>();
+        Map<String/*fully qualified class name*/, TestEntity> data = new TreeMap<>();
+        if (tr != null) {
+            Run<?,?> prevRun = tr.getRun();
+            if (prevRun instanceof FlowExecutionOwner.Executable && stageName != null) {
+                FlowExecutionOwner owner = ((FlowExecutionOwner.Executable)prevRun).asFlowExecutionOwner();
+                if (owner != null) {
+                    FlowExecution execution = owner.getOrNull();
+                    if (execution != null) {
+                        DepthFirstScanner scanner = new DepthFirstScanner();
+                        FlowNode stageId = scanner.findFirstMatch(execution, new StageNamePredicate(stageName));
+                        if (stageId != null) {
+                            tr = ((hudson.tasks.junit.TestResult) tr).getResultForPipelineBlock(stageId.getId());
+                        }
+
+                    }
+                }
+            }
             collect(tr, data, testMode);
+        } else {
+            if(estimateTestsFromFiles) {
+                listener.getLogger().println("No record available, try to find test classes");
+                data = findTestResultsInDirectory(build, listener, workspace);
+            }
+            if(data.isEmpty()) {
+                listener.getLogger().println("No test classes was found, so executing everything in one place");
+                return Collections.singletonList(new InclusionExclusionPattern(Collections.<String>emptyList(), false));
+            }
+        }
 
             // sort in the descending order of the duration
             List<TestEntity> sorted = new ArrayList<>(data.values());
             Collections.sort(sorted);
-            
+
             // degree of the parallelism. we need minimum 1
             final int n = Math.max(1, parallelism.calculate(sorted));
 
@@ -219,7 +289,6 @@ public class ParallelTestExecutor extends Builder {
                 }
             }
             return r;
-        }
     }
 
     /**
@@ -299,21 +368,48 @@ public class ParallelTestExecutor extends Builder {
     }
 
     private static TestResult findPreviousTestResult(Run<?, ?> b, TaskListener listener) {
-        for (int i = 0; i < NUMBER_OF_BUILDS_TO_SEARCH; i++) {// limit the search to a small number to avoid loading too much
-            b = b.getPreviousBuild();
-            if (b == null) break;
-            if(!RESULTS_OF_BUILDS_TO_CONSIDER.contains(b.getResult())) continue;
-
-            AbstractTestResultAction tra = b.getAction(AbstractTestResultAction.class);
-            if (tra == null) continue;
-
-            Object o = tra.getResult();
-            if (o instanceof TestResult) {
-                listener.getLogger().printf("Using build #%d as reference%n", b.getNumber());
-                return (TestResult) o;
+        Job<?, ?> project = b.getParent();
+        // Look for test results starting with the previous build
+        TestResult result = getTestResult(project, b.getPreviousBuild(), listener);
+        if (result == null) {
+            // Look for test results from the target branch builds if this is a change request.
+            SCMHead head = SCMHead.HeadByItem.findHead(project);
+            if (head instanceof ChangeRequestSCMHead) {
+                SCMHead target = ((ChangeRequestSCMHead) head).getTarget();
+                Item targetBranch = project.getParent().getItem(target.getName());
+                if (targetBranch != null && targetBranch instanceof Job) {
+                    result = getTestResult(project, ((Job<?, ?>) targetBranch).getLastBuild(), listener);
+                }
             }
         }
-        return null;    // couldn't find it
+        return result;
+    }
+
+
+    static TestResult getTestResult(Job<?, ?> originProject, Run<?, ?> b, TaskListener listener) {
+        TestResult result = null;
+        for (int i = 0; i < NUMBER_OF_BUILDS_TO_SEARCH; i++) {// limit the search to a small number to avoid loading too much
+            if (b == null) break;
+            if (RESULTS_OF_BUILDS_TO_CONSIDER.contains(b.getResult()) && !b.isBuilding()) {
+                AbstractTestResultAction tra = b.getAction(AbstractTestResultAction.class);
+                if (tra != null) {
+                    Object o = tra.getResult();
+                    if (o instanceof TestResult) {
+                        TestResult tr = (TestResult) o;
+                        String hyperlink = ModelHyperlinkNote.encodeTo('/' + b.getUrl(), originProject != b.getParent() ? b.getFullDisplayName() : b.getDisplayName());
+                        if (tr.getTotalCount() == 0) {
+                            listener.getLogger().printf("Build %s has no loadable test results (supposed count %d), skipping%n", hyperlink, tra.getTotalCount());
+                        } else {
+                            listener.getLogger().printf("Using build %s as reference%n", hyperlink);
+                            result = tr;
+                            break;
+                        }
+                    }
+                }
+            }
+            b = b.getPreviousBuild();
+        }
+        return result;
     }
 
     @Extension
@@ -330,6 +426,21 @@ public class ParallelTestExecutor extends Builder {
         @Override
         public String getDisplayName() {
             return "Parallel test job execution";
+        }
+    }
+
+    private static class StageNamePredicate implements Predicate<FlowNode> {
+        private final String stageName;
+        public StageNamePredicate(@NonNull String stageName) {
+            this.stageName = stageName;
+        }
+        @Override
+        public boolean apply(@Nullable FlowNode input) {
+            if (input != null) {
+                LabelAction labelAction = input.getPersistentAction(LabelAction.class);
+                return labelAction != null && stageName.equals(labelAction.getDisplayName());
+            }
+            return false;
         }
     }
 }

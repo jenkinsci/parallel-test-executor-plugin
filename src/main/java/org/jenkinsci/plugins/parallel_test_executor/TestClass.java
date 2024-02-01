@@ -8,7 +8,8 @@ import java.util.List;
  * Execution time of a specific test class.
  */
 public class TestClass extends TestEntity {
-    String className;
+
+    final String className;
 
     public TestClass(ClassResult cr) {
         String pkgName = cr.getParent().getName();
@@ -20,12 +21,16 @@ public class TestClass extends TestEntity {
         this.duration = (long)(cr.getDuration()*1000);  // milliseconds is a good enough precision for us
     }
 
+    //for test estimation for first run
+    public TestClass(String className){
+        this.className = className;
+        this.duration = 10;
+    }
+
     @Override
     public List<String> getOutputString() {
-        ArrayList<String> output = new ArrayList<String>(2);
-        output.add(className.replace('.','/')+".java");
-        output.add(className.replace('.','/')+".class");
-        return output;
+        var sanitizedClassName = className.replace('.', '/');
+        return List.of(sanitizedClassName +".java", sanitizedClassName +".class");
     }
 
     @Override

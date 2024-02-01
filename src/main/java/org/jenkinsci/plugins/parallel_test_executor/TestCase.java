@@ -20,7 +20,7 @@ public class TestCase extends TestEntity {
 
     @Override
     public List<String> getOutputString() {
-        return java.util.Collections.singletonList(output);
+        return List.of(output);
     }
     
     @Override

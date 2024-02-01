@@ -24,10 +24,10 @@ class TestCollector extends InvisibleAction implements Serializable {
     private static final long serialVersionUID = -592264249944063364L;
 
     // none of this is meant to persist
-    private transient AbstractBuild<?,?> collector;
-    private transient ParallelTestExecutor testExecutor;
+    private final transient AbstractBuild<?,?> collector;
+    private final transient ParallelTestExecutor testExecutor;
     @SuppressFBWarnings(value="SE_TRANSIENT_FIELD_NOT_RESTORED", justification="not needed after initial use")
-    private transient int ordinal;
+    private final transient int ordinal;
 
     public TestCollector(AbstractBuild<?, ?> collector, ParallelTestExecutor testExecutor, int ordinal) {
         this.testExecutor = testExecutor;

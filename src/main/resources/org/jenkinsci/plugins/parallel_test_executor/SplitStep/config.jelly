@@ -7,9 +7,13 @@
     <f:entry field="generateInclusions">
         <f:checkbox title="Generate inclusion patterns"/>
     </f:entry>
+    <f:entry field="estimateTestsFromFiles">
+        <f:checkbox title="Estimate tests from file sources"/>
+    </f:entry>
+    <f:entry field="stage" title="stage">
+        <f:textbox/>
+    </f:entry>
     <f:entry title="Test mode" field="testMode">
-        <f:enum>
-            ${it.description}
-        </f:enum>
+        <f:enum>${it.description}</f:enum>
     </f:entry>
 </j:jelly>

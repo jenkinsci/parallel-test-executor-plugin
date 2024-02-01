@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jenkinsci.plugins.parallel_test_executor.Test1" time="110.00" tests="20" errors="0" skipped="0" failures="0">
+  <testcase name="test1Case1" classname="org.jenkinsci.plugins.parallel_test_executor.Test1" time="1.00"/>
+  <testcase name="test1Case2" classname="org.jenkinsci.plugins.parallel_test_executor.Test1" time="2.00"/>
+  <testcase name="test1Case3" classname="org.jenkinsci.plugins.parallel_test_executor.Test2" time="3.00"/>
+</testsuite>

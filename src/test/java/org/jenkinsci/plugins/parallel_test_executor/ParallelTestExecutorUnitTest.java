@@ -1,20 +1,21 @@
 package org.jenkinsci.plugins.parallel_test_executor;
 
+import hudson.FilePath;
+import hudson.model.Job;
 import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.tasks.junit.TestResult;
 import hudson.tasks.test.AbstractTestResultAction;
+import java.io.IOException;
 import org.apache.tools.ant.DirectoryScanner;
 import org.hamcrest.Matchers;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.File;
 import java.net.URISyntaxException;
@@ -23,15 +24,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
-import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assume.assumeThat;
-import static org.mockito.Matchers.eq;
+import org.jvnet.hudson.test.Issue;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ParallelTestExecutorUnitTest {
@@ -57,6 +62,8 @@ public class ParallelTestExecutorUnitTest {
     public void setUp() throws Exception {
         when(build.getPreviousBuild()).thenReturn((Run)previousBuild);
         when(previousBuild.getResult()).thenReturn(Result.SUCCESS);
+        when(previousBuild.getUrl()).thenReturn("job/some-project/1");
+        when(previousBuild.getDisplayName()).thenReturn("#1");
         when(listener.getLogger()).thenReturn(System.err);
         when(previousBuild.getAction(eq(AbstractTestResultAction.class))).thenReturn(action);
     }
@@ -92,8 +99,23 @@ public class ParallelTestExecutorUnitTest {
         testResult.tally();
         when(action.getResult()).thenReturn(testResult);
 
-        List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, build, listener, false, testMode);
+        List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, build, listener, false, null, null, false, testMode);
         assertEquals(expectedSplitSize, splits.size());
+        for (InclusionExclusionPattern split : splits) {
+            assertFalse(split.isIncludes());
+        }
+    }
+
+    @Test
+    public void testWeDoNotCreateMoreSplitsThanThereAreTests() throws Exception {
+        // The test report only has 2 classes, so we should only split into 2 test executors
+        TestResult testResult = new TestResult(0L, scanner, false);
+        testResult.tally();
+        when(action.getResult()).thenReturn(testResult);
+
+        CountDrivenParallelism parallelism = new CountDrivenParallelism(5);
+        List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, build, listener, false, null, null, false, TestMode.JAVA);
+        assertEquals(2, splits.size());
         for (InclusionExclusionPattern split : splits) {
             assertFalse(split.isIncludes());
         }
@@ -116,7 +138,7 @@ public class ParallelTestExecutorUnitTest {
         testResult.tally();
         when(action.getResult()).thenReturn(testResult);
 
-        List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, build, listener, true, testMode);
+        List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, build, listener, true, null, null, true, testMode);
         assertEquals(expectedSplitSize, splits.size());
         List<String> exclusions = new ArrayList<>(splits.get(0).getList());
         List<String> inclusions = new ArrayList<>();
@@ -130,5 +152,49 @@ public class ParallelTestExecutorUnitTest {
         Collections.sort(exclusions);
         Collections.sort(inclusions);
         assertEquals("exclusions set should contain all elements included by inclusions set", inclusions, exclusions);
+    }
+
+    @Issue("JENKINS-47206")
+    @Test
+    public void findTestInJavaProjectDirectory(){
+        CountDrivenParallelism parallelism = new CountDrivenParallelism(5);
+        List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, build, listener, true, null, new FilePath(scanner.getBasedir()), true, null);
+        assertEquals(5, splits.size());
+    }
+
+    @Issue("JENKINS-47206")
+    @Test
+    public void findTestOfJavaProjectDirectoryInWorkspace(){
+        CountDrivenParallelism parallelism = new CountDrivenParallelism(5);
+        Map<String,TestEntity> data = ParallelTestExecutor.findTestResultsInDirectory(build, listener, new FilePath(scanner.getBasedir()));
+        Set<String> expectedTests = new HashSet<>();
+        expectedTests.add("FirstTest");
+        expectedTests.add("SecondTest");
+
+        expectedTests.add("somepackage/ThirdTest");
+        expectedTests.add("ThirdTest");
+        expectedTests.add("FourthTest");
+        expectedTests.add("FifthTest");
+        assertEquals("Result does not contains expected tests.", expectedTests, data.keySet());
+        List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, build, listener, true, null, new FilePath(scanner.getBasedir()), true, null);
+        assertEquals(5, splits.size());
+    }
+
+    @Test
+    public void previousBuildIsOngoing() throws IOException {
+        Job project = mock(Job.class);
+        Run previousPreviousBuild = mock(Run.class);
+        when(previousBuild.getResult()).thenReturn(null);
+        when(previousBuild.getPreviousBuild()).thenReturn(previousPreviousBuild);
+        when(previousPreviousBuild.getParent()).thenReturn(project);
+        when(previousPreviousBuild.getResult()).thenReturn(Result.SUCCESS);
+        when(previousPreviousBuild.getAction(eq(AbstractTestResultAction.class))).thenReturn(action);
+        when(previousPreviousBuild.getUrl()).thenReturn("job/some-project/1");
+        when(previousPreviousBuild.getDisplayName()).thenReturn("#1");
+        TestResult testResult = new TestResult(0L, scanner, false);
+        testResult.tally();
+        when(action.getResult()).thenReturn(testResult);
+
+        assertNotNull(ParallelTestExecutor.getTestResult(project, previousBuild, listener));
     }
 }
