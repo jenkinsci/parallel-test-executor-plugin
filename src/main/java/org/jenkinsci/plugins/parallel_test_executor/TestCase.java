@@ -8,6 +8,10 @@ import java.util.List;
  */
 public class TestCase extends TestEntity {
     String output;
+
+    public TestCase(CaseResult cr) {
+        this(cr, false);
+    }
     
     public TestCase(CaseResult cr, boolean withClassName) {
         if (withClassName) {
@@ -19,7 +23,12 @@ public class TestCase extends TestEntity {
     }
 
     @Override
-    public List<String> getOutputString() {
+    public String getKey() {
+        return output;
+    }
+
+    @Override
+    public List<String> getElements() {
         return List.of(output);
     }
     

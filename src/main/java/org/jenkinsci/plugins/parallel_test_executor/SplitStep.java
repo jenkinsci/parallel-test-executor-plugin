@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import org.jenkinsci.plugins.parallel_test_executor.testmode.TestMode;
 import org.jenkinsci.plugins.workflow.steps.Step;
 import org.jenkinsci.plugins.workflow.steps.StepContext;
 import org.jenkinsci.plugins.workflow.steps.StepDescriptor;
@@ -27,11 +28,11 @@ public final class SplitStep extends Step {
     private final Parallelism parallelism;
 
     private boolean generateInclusions;
-    private TestMode testMode;
 
     private String stage;
 
     private boolean estimateTestsFromFiles;
+    private TestMode testMode;
 
     @DataBoundConstructor
     public SplitStep(Parallelism parallelism) {
@@ -50,13 +51,10 @@ public final class SplitStep extends Step {
     public void setGenerateInclusions(boolean generateInclusions) {
         this.generateInclusions = generateInclusions;
     }
-    
+
+    @SuppressWarnings("unused") // jelly
     public TestMode getTestMode() {
-        if (testMode == null) {
-            return TestMode.JAVA;
-        } else {
-            return testMode;
-        }
+        return TestMode.fixDefault(testMode);
     }
     
     @DataBoundSetter
@@ -125,12 +123,12 @@ public final class SplitStep extends Step {
             FilePath path = context.get(FilePath.class);
 
             if (step.generateInclusions) {
-                return ParallelTestExecutor.findTestSplits(step.parallelism, build, listener, step.generateInclusions,
-                        step.stage, path, step.estimateTestsFromFiles, step.getTestMode());
+                return ParallelTestExecutor.findTestSplits(step.parallelism, step.testMode, build, listener, step.generateInclusions,
+                        step.stage, path, step.estimateTestsFromFiles);
             } else {
                 List<List<String>> result = new ArrayList<>();
-                for (InclusionExclusionPattern pattern : ParallelTestExecutor.findTestSplits(step.parallelism, build, listener,
-                        step.generateInclusions, step.stage, path, step.estimateTestsFromFiles, step.getTestMode())) {
+                for (InclusionExclusionPattern pattern : ParallelTestExecutor.findTestSplits(step.parallelism, step.testMode, build, listener,
+                        step.generateInclusions, step.stage, path, step.estimateTestsFromFiles)) {
                     result.add(pattern.getList());
                 }
                 return result;

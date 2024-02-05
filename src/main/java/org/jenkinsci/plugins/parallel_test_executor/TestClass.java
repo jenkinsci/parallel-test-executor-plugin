@@ -28,7 +28,12 @@ public class TestClass extends TestEntity {
     }
 
     @Override
-    public List<String> getOutputString() {
+    public String getKey() {
+        return className;
+    }
+
+    @Override
+    public List<String> getElements() {
         var sanitizedClassName = className.replace('.', '/');
         return List.of(sanitizedClassName +".java", sanitizedClassName +".class");
     }

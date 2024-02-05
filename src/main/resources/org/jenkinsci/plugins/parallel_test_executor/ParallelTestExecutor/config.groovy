@@ -2,6 +2,7 @@ package org.jenkinsci.plugins.parallel_test_executor.ParallelTestExecutor
 
 import jenkins.model.Jenkins
 import org.jenkinsci.plugins.parallel_test_executor.Parallelism
+import org.jenkinsci.plugins.parallel_test_executor.testmode.TestMode
 
 def f = namespace(lib.FormTagLib)
 
@@ -15,10 +16,10 @@ f.entry(title:"Optional inclusion file name in the test job", field:"includesPat
     f.textbox()
 }
 f.entry(title:"Degree of parallelism", field:"parallelism") {
-    f.hetero_radio(field:"parallelism", descriptors:Jenkins.instance.getDescriptorList(Parallelism.class))
+    f.hetero_radio(field:"parallelism", descriptors:Jenkins.get().getDescriptorList(Parallelism.class))
 }
-f.entry(title:"Test mode", field:"testMode") {
-    f.enum() { text(my.description) }
+f.entry(title:"Test parallelism", field:"testMode") {
+    f.hetero_radio(field:"testMode", descriptors:Jenkins.get().getDescriptorList(TestMode.class))
 }
 f.entry(title:"Test report directory in the test job", field:"testReportFiles") {
     f.textbox()

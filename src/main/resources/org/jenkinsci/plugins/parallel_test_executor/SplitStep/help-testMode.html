@@ -1,16 +1,3 @@
 <p>Configure how exclusions and inclusions are formed from the JUnit result XML. The test job 
 receiving the exclusion/inclusion files must be able to handle the format produced by
 the selected mode.</p>
-
-<p><strong>Parallelize on test classes (Java)</strong><br/>
-This mode represents the original parallel test executor behavior.
-Each exclusion/inclusion generates two lines by replacing "." with "/" in the fully qualified test
-class name and appending ".java" to one line and ".class" to the second line.</p>
-
-<p><strong>Parallelize on test case name (Generic)</strong><br/>
-Each exclusion/inclusion generates one line consisting of the test case name only. This is useful
-where a tool produces JUnit result XML containing unique test case names without any class prefix.</p>
-
-<p><strong>Parallelize on class and test case name (Generic)</strong><br/>
-Each exclusion/inclusion generates one line consisting of the class and test case name on a
-className.testName format.</p>

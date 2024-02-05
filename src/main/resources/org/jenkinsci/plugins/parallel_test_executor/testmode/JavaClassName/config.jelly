@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
+  <f:description>
+    This mode works best with java projects.<br/>
+    Each exclusion/inclusion generates two lines by replacing "." with "/" in the fully qualified test
+    class name and appending ".java" to one line and ".class" to the second line.
+  </f:description>
+</j:jelly>

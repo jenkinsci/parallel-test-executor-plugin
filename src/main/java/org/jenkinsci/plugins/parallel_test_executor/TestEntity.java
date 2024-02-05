@@ -9,14 +9,19 @@ import org.jenkinsci.plugins.parallel_test_executor.ParallelTestExecutor.Knapsac
  */
 @SuppressFBWarnings(value="EQ_COMPARETO_USE_OBJECT_EQUALS", justification="Cf. justification in Knapsack.")
 public abstract class TestEntity implements Comparable<TestEntity> {
+
     long duration;
     /**
      * Knapsack that this test class belongs to.
      */
     Knapsack knapsack;
-    
+
     TestEntity() {}
-    
+
+    public long getDuration() {
+        return duration;
+    }
+
     @Override
     public int compareTo(TestEntity that) {
         long l = this.duration - that.duration;
@@ -25,6 +30,8 @@ public abstract class TestEntity implements Comparable<TestEntity> {
         if (l<0)    return 1;
         return 0;
     }
+
+    public abstract String getKey();
     
-    public abstract List<String> getOutputString();
+    public abstract List<String> getElements();
 }
