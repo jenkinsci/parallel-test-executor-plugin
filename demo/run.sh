@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euxo pipefail
 
 function gitea_create_admin_user() {
   local username; username="${1:?}"
@@ -19,34 +19,38 @@ function gitea_token() {
 }
 
 function gitea_repository_exists() {
+    local name; name="${1:?}"
     local token; token="$(gitea_token)"
     [ "$(curl -s -o /dev/null -w "%{http_code}" -X 'GET' \
-      'http://localhost:3000/api/v1/repos/jenkins/demo' \
+      "http://localhost:3000/api/v1/repos/jenkins/$name" \
       -H "Authorization: token $token")" = "200" ]
 
 }
 
 function gitea_create_repository() {
+  local name; name="${1:?}"
   local token; token="$(gitea_token)"
   curl -X 'POST' \
     'http://localhost:3000/api/v1/user/repos' \
     -H "Authorization: token $token" \
     -H 'accept: application/json' \
     -H 'Content-Type: application/json' \
-    -d '{
-    "auto_init": true,
-    "default_branch": "main",
-    "name": "demo"
-  }'
+    -d "{
+    \"auto_init\": true,
+    \"default_branch\": \"main\",
+    \"name\": \"$name\"
+  }"
 }
 
 function gitea_init_repository() {
-  git clone http://jenkins:$(gitea_token)@localhost:3000/jenkins/demo.git target/repo
-  cp -R repo target/
-  pushd target/repo
-    bash ../../gen.sh
+  local name; name="${1:?}"
+  local script; script="${2:?}"
+  git clone "http://jenkins:$(gitea_token)@localhost:3000/jenkins/$name.git" "target/$name"
+  cp -R "repos/$name" target/
+  pushd "target/$name"
+    bash "../../$script"
     git add .
-    git -c user.email=demo@jenkins-ci.org -c user.name="Parallel Test Executor Demo" commit -m "Initial commit"
+    git -c commit.gpgsign=false -c user.email=demo@jenkins-ci.org -c user.name="Parallel Test Executor Demo" commit -m "Initial commit"
     git push origin -u
   popd
 }
@@ -77,8 +81,12 @@ docker compose up -d --wait
 gitea_create_admin_user jenkins demo@jenkins.io
 gitea_generate_access_token jenkins
 jenkins_update_credentials gitea
-if ! gitea_repository_exists; then
-  gitea_create_repository
-  gitea_init_repository
+if ! gitea_repository_exists demo; then
+  gitea_create_repository demo
+  gitea_init_repository demo gen.sh
+fi
+if ! gitea_repository_exists demo_python; then
+  gitea_create_repository demo_python
+  gitea_init_repository demo_python gen_pytests.sh
 fi
 readme

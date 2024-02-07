@@ -2,16 +2,50 @@
 <org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject plugin="workflow-multibranch@2.9.2">
   <actions/>
   <description>This job uses the pytest framework to execute 100 test cases contained in a single python file. It requires a version of parallel test executor plugin that supports test modes to parallel execution based on test cases and not only test classes.</description>
+  <sources>
+    <jenkins.branch.BranchSource plugin="branch-api@2.1051.v9985666b_f6cc">
+      <source class="org.jenkinsci.plugin.gitea.GiteaSCMSource" plugin="gitea@1.4.5">
+        <id>6126b51e-8b62-413c-9e82-333d0cf58bdb</id>
+        <serverUrl>http://gitea:3000</serverUrl>
+        <repoOwner>jenkins</repoOwner>
+        <repository>demo_python</repository>
+        <credentialsId>gitea</credentialsId>
+        <traits>
+          <org.jenkinsci.plugin.gitea.BranchDiscoveryTrait>
+            <strategyId>1</strategyId>
+          </org.jenkinsci.plugin.gitea.BranchDiscoveryTrait>
+          <org.jenkinsci.plugin.gitea.OriginPullRequestDiscoveryTrait>
+            <strategyId>1</strategyId>
+          </org.jenkinsci.plugin.gitea.OriginPullRequestDiscoveryTrait>
+          <org.jenkinsci.plugin.gitea.ForkPullRequestDiscoveryTrait>
+            <strategyId>1</strategyId>
+            <trust class="org.jenkinsci.plugin.gitea.ForkPullRequestDiscoveryTrait$TrustContributors"/>
+          </org.jenkinsci.plugin.gitea.ForkPullRequestDiscoveryTrait>
+        </traits>
+      </source>
+      <strategy class="jenkins.branch.DefaultBranchPropertyStrategy">
+        <properties class="empty-list"/>
+      </strategy>
+    </jenkins.branch.BranchSource>
+  </sources>
+  <orphanedItemStrategy class="com.cloudbees.hudson.plugins.folder.computed.DefaultOrphanedItemStrategy" plugin="cloudbees-folder@6.758.vfd75d09eea_a_1">
+    <pruneDeadBranches>true</pruneDeadBranches>
+    <daysToKeep>-1</daysToKeep>
+    <numToKeep>-1</numToKeep>
+    <abortBuilds>false</abortBuilds>
+  </orphanedItemStrategy>
+  <factory class="org.jenkinsci.plugins.workflow.multibranch.WorkflowBranchProjectFactory">
+    <owner class="org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject" reference="../.."/>
+  </factory>
   <properties>
-    <org.jenkinsci.plugins.workflow.libs.FolderLibraries plugin="workflow-cps-global-lib@2.4">
+    <org.jenkinsci.plugins.workflow.libs.FolderLibraries>
       <libraries>
         <org.jenkinsci.plugins.workflow.libs.LibraryConfiguration>
           <name>testInParallel</name>
           <retriever class="org.jenkinsci.plugins.workflow.libs.SCMSourceRetriever">
-            <scm class="jenkins.plugins.git.GitSCMSource" plugin="git@3.0.1">
+            <scm class="jenkins.plugins.git.GitSCMSource">
               <id>whatever</id>
               <remote>/tmp/lib</remote>
-              <credentialsId></credentialsId>
               <includes>*</includes>
               <excludes></excludes>
               <ignoreOnPushNotifications>false</ignoreOnPushNotifications>
@@ -50,37 +84,10 @@
   </views>
   <viewsTabBar class="hudson.views.DefaultViewsTabBar"/>
   <primaryView>All</primaryView>
-  <healthMetrics>
-    <com.cloudbees.hudson.plugins.folder.health.WorstChildHealthMetric plugin="cloudbees-folder@5.13"/>
-  </healthMetrics>
-  <icon class="com.cloudbees.hudson.plugins.folder.icons.StockFolderIcon" plugin="cloudbees-folder@5.13"/>
-  <orphanedItemStrategy class="com.cloudbees.hudson.plugins.folder.computed.DefaultOrphanedItemStrategy" plugin="cloudbees-folder@5.13">
-    <pruneDeadBranches>true</pruneDeadBranches>
-    <daysToKeep>0</daysToKeep>
-    <numToKeep>0</numToKeep>
-  </orphanedItemStrategy>
   <triggers>
-    <com.cloudbees.hudson.plugins.folder.computed.PeriodicFolderTrigger plugin="cloudbees-folder@5.13">
+    <com.cloudbees.hudson.plugins.folder.computed.PeriodicFolderTrigger>
       <spec>* * * * *</spec>
       <interval>60000</interval>
     </com.cloudbees.hudson.plugins.folder.computed.PeriodicFolderTrigger>
   </triggers>
-  <sources>
-    <jenkins.branch.BranchSource plugin="branch-api@1.11.1">
-      <source class="jenkins.plugins.git.GitSCMSource" plugin="git@3.0.1">
-        <id>55178d86-08c6-4e86-bced-72b2f9949c40</id>
-        <remote>/tmp/repo_pytest</remote>
-        <credentialsId></credentialsId>
-        <includes>*</includes>
-        <excludes></excludes>
-        <ignoreOnPushNotifications>false</ignoreOnPushNotifications>
-      </source>
-      <strategy class="jenkins.branch.DefaultBranchPropertyStrategy">
-        <properties class="empty-list"/>
-      </strategy>
-    </jenkins.branch.BranchSource>
-  </sources>
-  <factory class="org.jenkinsci.plugins.workflow.multibranch.WorkflowBranchProjectFactory">
-    <owner class="org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject" reference="../.."/>
-  </factory>
 </org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject>

@@ -1,31 +1,26 @@
-FROM jenkins/jenkins:2.375.2
+FROM maven:3.9.6-eclipse-temurin-11 AS maven
+FROM jenkins/jenkins:2.387.3
 
 USER root
 
-ENV MAVEN_VERSION=3.8.7
-RUN curl -s https://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar xvfCz - /opt && \
-    ln -sv /opt/apache-maven-$MAVEN_VERSION/bin/mvn /usr/local/bin/mvn
+RUN apt-get update &&  \
+    apt-get install -y python3-pytest && \
+    apt-get clean
+
+COPY --from=maven /usr/share/maven /usr/share/maven/
+RUN ln -s /usr/share/maven/bin/mvn /usr/local/bin/mvn && \
+    ln -s /usr/share/maven/bin/mvnDebug /usr/local/bin/mvnDebug
 
 ADD lib /tmp/lib
 RUN mkdir -p /m2repo
 
 RUN chown -R jenkins.jenkins /tmp/lib /m2repo
 
-ADD repo_pytest /tmp/repo_pytest
-COPY gen_pytests.sh /tmp/
-RUN chown -R jenkins.jenkins /tmp/repo_pytest
-
 USER jenkins
 
 COPY target/test-classes/test-dependencies/*.hpi /usr/share/jenkins/ref/plugins/
 
 RUN cd /tmp/lib && \
-    git init && \
-    git add . && \
-    git -c user.email=demo@jenkins-ci.org -c user.name="Parallel Test Executor Demo" commit -m 'demo'
-
-RUN cd /tmp/repo_pytest && \
-    bash ../gen_pytests.sh && \
     git init && \
     git add . && \
     git -c user.email=demo@jenkins-ci.org -c user.name="Parallel Test Executor Demo" commit -m 'demo'

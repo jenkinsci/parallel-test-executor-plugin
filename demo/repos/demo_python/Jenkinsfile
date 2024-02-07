@@ -1,0 +1,31 @@
+@Library('testInParallel') _
+
+stage('Sources') {
+  node {
+    checkout scm
+    stash name: 'sources', excludes: 'Jenkinsfile'
+  }
+}
+
+stage('Testing') {
+  testInParallel(count(5), testCase(), 'inclusions.txt', 'exclusions.txt', 'Testing python', {
+    unstash 'sources'
+  }, {
+    configFileProvider([configFile(fileId: 'jenkins-mirror', variable: 'SETTINGS')]) {
+        def result = ""
+        def e = readFile 'exclusions.txt'
+        def i = readFile 'inclusions.txt'
+
+        if (e) { // use exclusions
+            e = e.replaceAll("\n", " or ")
+            result = "not(${e})"
+        } else if (i) {
+            i = i.replaceAll("\n", " or ")
+            result = i
+        }
+
+        sh "py.test-3 --junit-xml=out.xml -k \'${result}\' || true"
+        junit 'out.xml'
+    }
+  })
+}
