@@ -9,6 +9,9 @@ import hudson.tasks.junit.ClassResult;
 import java.util.Map;
 import org.jenkinsci.plugins.parallel_test_executor.TestEntity;
 
+/**
+ * Extension point returning a list of test entities either from previous runs or estimated from the workspace.
+ */
 public abstract class TestMode extends AbstractDescribableImpl<TestMode> implements ExtensionPoint {
     /**
      * @param classResult The initial class result
