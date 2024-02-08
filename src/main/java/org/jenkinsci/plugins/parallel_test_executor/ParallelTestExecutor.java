@@ -9,7 +9,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.AbortException;
 import hudson.Extension;
 import hudson.FilePath;
-import hudson.Functions;
 import hudson.Launcher;
 import hudson.Util;
 import hudson.console.ModelHyperlinkNote;
@@ -51,12 +50,9 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import jenkins.scm.api.SCMHead;
 import jenkins.scm.api.mixin.ChangeRequestSCMHead;
-import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.parallel_test_executor.testmode.TestMode;
 import org.jenkinsci.plugins.workflow.actions.LabelAction;
 import org.jenkinsci.plugins.workflow.flow.FlowExecution;
@@ -83,18 +79,16 @@ public class ParallelTestExecutor extends Builder {
     private final String testReportFiles;
     private final boolean doNotArchiveTestResults;
     private final List<AbstractBuildParameters> parameters;
-    private final boolean estimateTestsFromFiles;
     private TestMode testMode;
 
     @DataBoundConstructor
-    public ParallelTestExecutor(Parallelism parallelism, String testJob, String patternFile, String testReportFiles, boolean archiveTestResults, List<AbstractBuildParameters> parameters, boolean estimateTestsFromFiles) {
+    public ParallelTestExecutor(Parallelism parallelism, String testJob, String patternFile, String testReportFiles, boolean archiveTestResults, List<AbstractBuildParameters> parameters) {
         this.parallelism = parallelism;
         this.testJob = testJob;
         this.patternFile = patternFile;
         this.testReportFiles = testReportFiles;
         this.parameters = parameters;
         this.doNotArchiveTestResults = !archiveTestResults;
-        this.estimateTestsFromFiles = estimateTestsFromFiles;
     }
 
     public Parallelism getParallelism() {
@@ -174,7 +168,7 @@ public class ParallelTestExecutor extends Builder {
         FilePath dir = workspace.child("test-splits");
         dir.deleteRecursive();
         List<InclusionExclusionPattern> splits = findTestSplits(parallelism, testMode, build, listener, includesPatternFile != null,
-                null, build.getWorkspace(), estimateTestsFromFiles);
+                null, build.getWorkspace());
         for (int i = 0; i < splits.size(); i++) {
             InclusionExclusionPattern pattern = splits.get(i);
             try (OutputStream os = dir.child("split." + i + "." + (pattern.isIncludes() ? "include" : "exclude") + ".txt").write();
@@ -195,40 +189,9 @@ public class ParallelTestExecutor extends Builder {
         return true;
     }
 
-    private static final Pattern TEST = Pattern.compile(".+/src/test/java/(.+)[.]java");
-    public static Map<String, TestEntity>  findTestResultsInDirectory(Run<?,?> build, TaskListener listener, @CheckForNull FilePath workspace){
-        if(workspace==null){
-            return Collections.emptyMap();
-        }
-        Map<String, TestEntity> data = new TreeMap<>();
-        final List<String> testFilesExpression = new ArrayList<>();
-        testFilesExpression.add("**/src/test/java/**/Test*.java");
-        testFilesExpression.add("**/src/test/java/**/*Test.java");
-        testFilesExpression.add("**/src/test/java/**/*Tests.java");
-        testFilesExpression.add("**/src/test/java/**/*TestCase.java");
-        FilePath[] tests;
-        try {
-            tests = workspace.list(StringUtils.join(testFilesExpression, ","));
-        } catch (Throwable throwable) {
-            Functions.printStackTrace(throwable, listener.getLogger());
-            return data;
-        }
-        for (FilePath test : tests) {
-            String testPath = test.getRemote().replace('\\', '/');
-            Matcher m = TEST.matcher(testPath);
-            if (!m.matches()) {
-             throw new IllegalStateException(testPath + " didn't match expected format");
-            }
-            String relativePath = m.group(1); // e.g. pkg/subpkg/SomeTest
-            data.put(relativePath, new TestClass(relativePath));
-        }
-        return data;
-
-    }
-
     static List<InclusionExclusionPattern> findTestSplits(Parallelism parallelism, @CheckForNull TestMode testMode, Run<?,?> build, TaskListener listener,
                                                           boolean generateInclusions,
-                                                          @CheckForNull final String stageName, @CheckForNull FilePath workspace, boolean estimateTestsFromFiles) {
+                                                          @CheckForNull final String stageName, @CheckForNull FilePath workspace) throws InterruptedException {
         testMode = testMode == null ? TestMode.getDefault() : testMode;
         TestResult tr = findPreviousTestResult(build, listener);
         Map<String/*fully qualified class name*/, TestEntity> data = new TreeMap<>();
@@ -249,10 +212,8 @@ public class ParallelTestExecutor extends Builder {
             }
             collect(tr, data, testMode);
         } else {
-            if(estimateTestsFromFiles) {
-                listener.getLogger().println("No record available, try to find test classes");
-                data = findTestResultsInDirectory(build, listener, workspace);
-            }
+            listener.getLogger().println("No record available, try to find test classes");
+            data = testMode.estimate(workspace, listener);
             if(data.isEmpty()) {
                 listener.getLogger().println("No test classes was found, so executing everything in one place");
                 return Collections.singletonList(new InclusionExclusionPattern(Collections.<String>emptyList(), false));

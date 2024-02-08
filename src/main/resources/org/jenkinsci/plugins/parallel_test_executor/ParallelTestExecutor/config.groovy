@@ -16,17 +16,13 @@ f.entry(title:"Optional inclusion file name in the test job", field:"includesPat
     f.textbox()
 }
 f.entry(title:"Degree of parallelism", field:"parallelism") {
-    f.hetero_radio(field:"parallelism", descriptors:Jenkins.get().getDescriptorList(Parallelism.class))
+    f.hetero_radio(descriptors:Jenkins.get().getDescriptorList(Parallelism.class))
 }
 f.entry(title:"Test parallelism", field:"testMode") {
-    f.hetero_radio(field:"testMode", descriptors:Jenkins.get().getDescriptorList(TestMode.class))
+    f.hetero_radio(descriptors:Jenkins.get().getDescriptorList(TestMode.class))
 }
 f.entry(title:"Test report directory in the test job", field:"testReportFiles") {
     f.textbox()
-}
-
-f.entry(title:"Estimate tests from file sources", field:"estimateTestsFromFiles") {
-    f.checkbox()
 }
 
 f.block {

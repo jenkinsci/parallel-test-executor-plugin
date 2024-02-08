@@ -3,7 +3,7 @@ def call(parallelism, testMode, inclusionsFile, exclusionsFile, stageName, prepa
   node {
     deleteDir()
     prepare()
-    splits = splitTests parallelism: parallelism, testMode: testMode, generateInclusions: true, estimateTestsFromFiles: true, stage: stageName
+    splits = splitTests parallelism: parallelism, testMode: testMode, generateInclusions: true, stage: stageName
   }
   def branches = [:]
   for (int i = 0; i < splits.size(); i++) {

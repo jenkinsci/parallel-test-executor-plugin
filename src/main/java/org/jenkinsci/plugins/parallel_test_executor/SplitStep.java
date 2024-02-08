@@ -6,11 +6,9 @@ import hudson.FilePath;
 import hudson.Util;
 import hudson.model.Run;
 import hudson.model.TaskListener;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-
 import org.jenkinsci.plugins.parallel_test_executor.testmode.TestMode;
 import org.jenkinsci.plugins.workflow.steps.Step;
 import org.jenkinsci.plugins.workflow.steps.StepContext;
@@ -31,7 +29,6 @@ public final class SplitStep extends Step {
 
     private String stage;
 
-    private boolean estimateTestsFromFiles;
     private TestMode testMode;
 
     @DataBoundConstructor
@@ -62,13 +59,25 @@ public final class SplitStep extends Step {
         this.testMode = testMode;
     }
 
-    public boolean isEstimateTestsFromFiles() {
-        return estimateTestsFromFiles;
-    }
-
+    /**
+     * @param estimateTestsFromFiles true if we should estimate the tests from the files
+     * @deprecated use {@link #setTestMode(TestMode)} instead.
+     */
+    @Deprecated
     @DataBoundSetter
     public void setEstimateTestsFromFiles(boolean estimateTestsFromFiles) {
-        this.estimateTestsFromFiles = estimateTestsFromFiles;
+        // no-op
+    }
+
+    /**
+     * Method kept only to make the snippet generator happy.
+     *
+     * @return true if we should estimate the tests from the files
+     * @deprecated use {@link #getTestMode()} ()} instead
+     */
+    @Deprecated
+    public boolean isEstimateTestsFromFiles() {
+        return false;
     }
 
     public String getStage() {
@@ -124,11 +133,11 @@ public final class SplitStep extends Step {
 
             if (step.generateInclusions) {
                 return ParallelTestExecutor.findTestSplits(step.parallelism, step.testMode, build, listener, step.generateInclusions,
-                        step.stage, path, step.estimateTestsFromFiles);
+                        step.stage, path);
             } else {
                 List<List<String>> result = new ArrayList<>();
                 for (InclusionExclusionPattern pattern : ParallelTestExecutor.findTestSplits(step.parallelism, step.testMode, build, listener,
-                        step.generateInclusions, step.stage, path, step.estimateTestsFromFiles)) {
+                        step.generateInclusions, step.stage, path)) {
                     result.add(pattern.getList());
                 }
                 return result;

@@ -2,7 +2,9 @@ package org.jenkinsci.plugins.parallel_test_executor.testmode;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.ExtensionPoint;
+import hudson.FilePath;
 import hudson.model.AbstractDescribableImpl;
+import hudson.model.TaskListener;
 import hudson.tasks.junit.ClassResult;
 import java.util.Map;
 import org.jenkinsci.plugins.parallel_test_executor.TestEntity;
@@ -14,6 +16,17 @@ public abstract class TestMode extends AbstractDescribableImpl<TestMode> impleme
      */
     @NonNull
     public abstract Map<String, TestEntity> getTestEntitiesMap(@NonNull ClassResult classResult);
+
+    /**
+     * This method will be called if no historical test results can be found. In that case, an estimate can be provided from the workspace content.
+     * @param workspace
+     * @param listener
+     * @return a Map of test entities, keyed by their unique key
+     * @throws InterruptedException
+     */
+    public Map<String, TestEntity> estimate(FilePath workspace, @NonNull TaskListener listener) throws InterruptedException {
+        return Map.of();
+    }
 
     /**
      * @return a description of the test entity type that is used for splitting, e.g. "cases"

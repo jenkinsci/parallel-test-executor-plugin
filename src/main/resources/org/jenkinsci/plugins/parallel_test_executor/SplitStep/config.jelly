@@ -6,9 +6,6 @@
     <f:entry field="generateInclusions">
         <f:checkbox title="Generate inclusion patterns"/>
     </f:entry>
-    <f:entry field="estimateTestsFromFiles">
-        <f:checkbox title="Estimate tests from file sources"/>
-    </f:entry>
     <f:entry field="stage" title="stage">
         <f:textbox/>
     </f:entry>

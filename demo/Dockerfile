@@ -25,8 +25,4 @@ RUN cd /tmp/lib && \
     git add . && \
     git -c user.email=demo@jenkins-ci.org -c user.name="Parallel Test Executor Demo" commit -m 'demo'
 
-# TODO without this JENKINS-24752 workaround, it takes too long to provision.
-# (Do not add hudson.model.LoadStatistics.decay=0.1; in that case we overprovision slaves which never get used, and OnceRetentionStrategy.check disconnects them after an idle timeout.)
-ENV JAVA_OPTS -Dhudson.model.LoadStatistics.clock=1000 -Dhudson.Main.development=true -Dhudson.plugins.git.GitSCM.ALLOW_LOCAL_CHECKOUT=true
-
 ADD JENKINS_HOME /usr/share/jenkins/ref
