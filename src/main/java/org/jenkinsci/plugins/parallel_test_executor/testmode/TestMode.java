@@ -22,10 +22,10 @@ public abstract class TestMode extends AbstractDescribableImpl<TestMode> impleme
 
     /**
      * This method will be called if no historical test results can be found. In that case, an estimate can be provided from the workspace content.
-     * @param workspace
-     * @param listener
+     * @param workspace The current directory where tests are expected to be found.
+     * @param listener The build listener if any output needs to be logged.
      * @return a Map of test entities, keyed by their unique key
-     * @throws InterruptedException
+     * @throws InterruptedException if the build get interrupted while executing this method.
      */
     public Map<String, TestEntity> estimate(FilePath workspace, @NonNull TaskListener listener) throws InterruptedException {
         return Map.of();
