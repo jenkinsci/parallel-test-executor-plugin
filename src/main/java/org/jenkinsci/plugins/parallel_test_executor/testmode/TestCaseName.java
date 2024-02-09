@@ -13,8 +13,10 @@ import org.jenkinsci.plugins.parallel_test_executor.TestEntity;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
- * Each exclusion/inclusion generates one line consisting of the test case name only. <br/>
+ * Each exclusion/inclusion generates one line consisting of the test case name only.
+ * <p>
  * This is useful where a tool produces JUnit result XML containing unique test case names without any class prefix.
+ * </p>
  */
 public class TestCaseName extends TestMode {
 

@@ -18,11 +18,14 @@ import org.jenkinsci.plugins.parallel_test_executor.TestEntity;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
- * This mode works best with java projects.<br/>
+ * This mode works best with java projects.
+ * <p>
  * Each exclusion/inclusion generates two lines by replacing "." with "/" in the fully qualified test
  * class name and appending ".java" to one line and ".class" to the second line.
- *
+ * </p>
+ * <p>
  * It is also able to estimate tests to run from the workspace content if no historical context could be found.
+ * </p>
  */
 public class JavaClassName extends TestMode {
     private static final String PATTERNS = String.join(",", List.of(
