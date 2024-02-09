@@ -1,0 +1,93 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject plugin="workflow-multibranch@2.9.2">
+  <actions/>
+  <description>This job uses the pytest framework to execute 100 test cases contained in a single python file. It requires a version of parallel test executor plugin that supports test modes to parallel execution based on test cases and not only test classes.</description>
+  <sources>
+    <jenkins.branch.BranchSource plugin="branch-api@2.1051.v9985666b_f6cc">
+      <source class="org.jenkinsci.plugin.gitea.GiteaSCMSource" plugin="gitea@1.4.5">
+        <id>6126b51e-8b62-413c-9e82-333d0cf58bdb</id>
+        <serverUrl>http://gitea:3000</serverUrl>
+        <repoOwner>jenkins</repoOwner>
+        <repository>demo_python</repository>
+        <credentialsId>gitea</credentialsId>
+        <traits>
+          <org.jenkinsci.plugin.gitea.BranchDiscoveryTrait>
+            <strategyId>1</strategyId>
+          </org.jenkinsci.plugin.gitea.BranchDiscoveryTrait>
+          <org.jenkinsci.plugin.gitea.OriginPullRequestDiscoveryTrait>
+            <strategyId>1</strategyId>
+          </org.jenkinsci.plugin.gitea.OriginPullRequestDiscoveryTrait>
+          <org.jenkinsci.plugin.gitea.ForkPullRequestDiscoveryTrait>
+            <strategyId>1</strategyId>
+            <trust class="org.jenkinsci.plugin.gitea.ForkPullRequestDiscoveryTrait$TrustContributors"/>
+          </org.jenkinsci.plugin.gitea.ForkPullRequestDiscoveryTrait>
+        </traits>
+      </source>
+      <strategy class="jenkins.branch.DefaultBranchPropertyStrategy">
+        <properties class="empty-list"/>
+      </strategy>
+    </jenkins.branch.BranchSource>
+  </sources>
+  <orphanedItemStrategy class="com.cloudbees.hudson.plugins.folder.computed.DefaultOrphanedItemStrategy" plugin="cloudbees-folder@6.758.vfd75d09eea_a_1">
+    <pruneDeadBranches>true</pruneDeadBranches>
+    <daysToKeep>-1</daysToKeep>
+    <numToKeep>-1</numToKeep>
+    <abortBuilds>false</abortBuilds>
+  </orphanedItemStrategy>
+  <factory class="org.jenkinsci.plugins.workflow.multibranch.WorkflowBranchProjectFactory">
+    <owner class="org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject" reference="../.."/>
+  </factory>
+  <properties>
+    <org.jenkinsci.plugins.workflow.libs.FolderLibraries>
+      <libraries>
+        <org.jenkinsci.plugins.workflow.libs.LibraryConfiguration>
+          <name>testInParallel</name>
+          <retriever class="org.jenkinsci.plugins.workflow.libs.SCMSourceRetriever">
+            <scm class="jenkins.plugins.git.GitSCMSource">
+              <id>whatever</id>
+              <remote>/tmp/lib</remote>
+              <includes>*</includes>
+              <excludes></excludes>
+              <ignoreOnPushNotifications>false</ignoreOnPushNotifications>
+            </scm>
+          </retriever>
+          <defaultVersion>master</defaultVersion>
+          <implicit>false</implicit>
+          <allowVersionOverride>true</allowVersionOverride>
+        </org.jenkinsci.plugins.workflow.libs.LibraryConfiguration>
+      </libraries>
+    </org.jenkinsci.plugins.workflow.libs.FolderLibraries>
+  </properties>
+  <views>
+    <hudson.model.ListView>
+      <owner class="org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject" reference="../../.."/>
+      <name>All</name>
+      <filterExecutors>false</filterExecutors>
+      <filterQueue>false</filterQueue>
+      <properties class="hudson.model.View$PropertyList"/>
+      <jobNames>
+        <comparator class="hudson.util.CaseInsensitiveComparator"/>
+      </jobNames>
+      <jobFilters/>
+      <columns>
+        <hudson.views.StatusColumn/>
+        <hudson.views.WeatherColumn/>
+        <hudson.views.JobColumn/>
+        <hudson.views.LastSuccessColumn/>
+        <hudson.views.LastFailureColumn/>
+        <hudson.views.LastDurationColumn/>
+        <hudson.views.BuildButtonColumn/>
+      </columns>
+      <includeRegex>.*</includeRegex>
+      <recurse>false</recurse>
+    </hudson.model.ListView>
+  </views>
+  <viewsTabBar class="hudson.views.DefaultViewsTabBar"/>
+  <primaryView>All</primaryView>
+  <triggers>
+    <com.cloudbees.hudson.plugins.folder.computed.PeriodicFolderTrigger>
+      <spec>* * * * *</spec>
+      <interval>60000</interval>
+    </com.cloudbees.hudson.plugins.folder.computed.PeriodicFolderTrigger>
+  </triggers>
+</org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject>

@@ -1,21 +1,15 @@
 package org.jenkinsci.plugins.parallel_test_executor;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.tasks.junit.ClassResult;
-import org.jenkinsci.plugins.parallel_test_executor.ParallelTestExecutor.Knapsack;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Execution time of a specific test case.
+ * Execution time of a specific test class.
  */
-@SuppressFBWarnings(value="EQ_COMPARETO_USE_OBJECT_EQUALS", justification="Cf. justification in Knapsack.")
-public class TestClass implements Comparable<TestClass> {
+public class TestClass extends TestEntity {
 
     final String className;
-    final long duration;
-    /**
-     * Knapsack that this test class belongs to.
-     */
-    Knapsack knapsack;
 
     public TestClass(ClassResult cr) {
         String pkgName = cr.getParent().getName();
@@ -30,18 +24,22 @@ public class TestClass implements Comparable<TestClass> {
     //for test estimation for first run
     public TestClass(String className){
         this.className = className;
-        duration = 10;
+        this.duration = 10;
     }
 
-    public int compareTo(TestClass that) {
-        long l = this.duration - that.duration;
-        // sort them in the descending order
-        if (l>0)    return -1;
-        if (l<0)    return 1;
-        return 0;
+    @Override
+    public String getKey() {
+        return className;
     }
 
-    public String getSourceFileName(String extension) {
-        return className.replace('.','/')+extension;
+    @Override
+    public List<String> getElements() {
+        var sanitizedClassName = className.replace('.', '/');
+        return List.of(sanitizedClassName +".java", sanitizedClassName +".class");
+    }
+
+    @Override
+    public String toString() {
+        return className +".extension";
     }
 }

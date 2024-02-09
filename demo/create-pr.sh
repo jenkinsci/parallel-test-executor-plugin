@@ -6,7 +6,7 @@ pushd target/repo > /dev/null
   export BRANCH_NAME=experiment-$(openssl rand -hex 6)
   export TARGET_BRANCH=main
   git checkout -b "$BRANCH_NAME"
-  git -c user.email=demo@jenkins-ci.org -c user.name="Parallel Test Executor Demo" commit --allow-empty -m "Empty commit"
+  git -c commit.gpgsign=false -c user.email=demo@jenkins-ci.org -c user.name="Parallel Test Executor Demo" commit --allow-empty -m "Empty commit"
   git push -u origin "$BRANCH_NAME"
   curl -X 'POST' \
     'http://localhost:3000/api/v1/repos/jenkins/demo/pulls' \

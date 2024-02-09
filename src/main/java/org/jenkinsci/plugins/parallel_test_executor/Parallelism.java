@@ -12,5 +12,5 @@ import java.util.List;
 public abstract class Parallelism extends AbstractDescribableImpl<Parallelism> {
     /*package*/ Parallelism() {}
 
-    public abstract int calculate(List<TestClass> tests);
+    public abstract int calculate(List<TestEntity> tests);
 }

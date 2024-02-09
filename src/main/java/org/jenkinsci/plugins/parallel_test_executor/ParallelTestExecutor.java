@@ -2,6 +2,9 @@ package org.jenkinsci.plugins.parallel_test_executor;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.AbortException;
 import hudson.Extension;
@@ -9,8 +12,22 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.Util;
 import hudson.console.ModelHyperlinkNote;
-import hudson.model.*;
-import hudson.plugins.parameterizedtrigger.*;
+import hudson.model.AbstractBuild;
+import hudson.model.AbstractProject;
+import hudson.model.Action;
+import hudson.model.AutoCompletionCandidates;
+import hudson.model.BuildListener;
+import hudson.model.Item;
+import hudson.model.ItemGroup;
+import hudson.model.Job;
+import hudson.model.Result;
+import hudson.model.Run;
+import hudson.model.TaskListener;
+import hudson.plugins.parameterizedtrigger.AbstractBuildParameterFactory;
+import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
+import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
+import hudson.plugins.parameterizedtrigger.BlockingBehaviour;
+import hudson.plugins.parameterizedtrigger.TriggerBuilder;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.tasks.junit.ClassResult;
@@ -18,9 +35,25 @@ import hudson.tasks.junit.JUnitResultArchiver;
 import hudson.tasks.test.AbstractTestResultAction;
 import hudson.tasks.test.TabulatedResult;
 import hudson.tasks.test.TestResult;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.PriorityQueue;
+import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import jenkins.scm.api.SCMHead;
 import jenkins.scm.api.mixin.ChangeRequestSCMHead;
-import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.plugins.parallel_test_executor.testmode.TestMode;
 import org.jenkinsci.plugins.workflow.actions.LabelAction;
 import org.jenkinsci.plugins.workflow.flow.FlowExecution;
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner;
@@ -31,22 +64,11 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import edu.umd.cs.findbugs.annotations.CheckForNull;
-import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.Nullable;
-import hudson.Functions;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 /**
  * @author Kohsuke Kawaguchi
  */
 public class ParallelTestExecutor extends Builder {
+    private static final Logger LOGGER = Logger.getLogger(ParallelTestExecutor.class.getName());
     public static final int NUMBER_OF_BUILDS_TO_SEARCH = 20;
     public static final ImmutableSet<Result> RESULTS_OF_BUILDS_TO_CONSIDER = ImmutableSet.of(Result.SUCCESS, Result.UNSTABLE);
 
@@ -57,17 +79,16 @@ public class ParallelTestExecutor extends Builder {
     private final String testReportFiles;
     private final boolean doNotArchiveTestResults;
     private final List<AbstractBuildParameters> parameters;
-    private final boolean estimateTestsFromFiles;
+    private TestMode testMode;
 
     @DataBoundConstructor
-    public ParallelTestExecutor(Parallelism parallelism, String testJob, String patternFile, String testReportFiles, boolean archiveTestResults, List<AbstractBuildParameters> parameters, boolean estimateTestsFromFiles) {
+    public ParallelTestExecutor(Parallelism parallelism, String testJob, String patternFile, String testReportFiles, boolean archiveTestResults, List<AbstractBuildParameters> parameters) {
         this.parallelism = parallelism;
         this.testJob = testJob;
         this.patternFile = patternFile;
         this.testReportFiles = testReportFiles;
         this.parameters = parameters;
         this.doNotArchiveTestResults = !archiveTestResults;
-        this.estimateTestsFromFiles = estimateTestsFromFiles;
     }
 
     public Parallelism getParallelism() {
@@ -100,21 +121,31 @@ public class ParallelTestExecutor extends Builder {
         return !doNotArchiveTestResults;
     }
 
+    @SuppressWarnings("unused") // jetty
+    public TestMode getTestMode() {
+        return TestMode.fixDefault(testMode);
+    }
+
+    @DataBoundSetter
+    public void setTestMode(TestMode testMode) {
+        this.testMode = testMode;
+    }
+
     public List<AbstractBuildParameters> getParameters() {
         return parameters;
     }
 
     /**
-     * {@link org.jenkinsci.plugins.parallel_test_executor.TestClass}es are divided into multiple sets of roughly equal size.
+     * {@link TestEntity}es are divided into multiple sets of roughly equal size.
      */
     @SuppressFBWarnings(value="EQ_COMPARETO_USE_OBJECT_EQUALS", justification="We wish to consider knapsacks as distinct items, just sort by size.")
     static class Knapsack implements Comparable<Knapsack> {
         /**
-         * Total duration of all {@link org.jenkinsci.plugins.parallel_test_executor.TestClass}es that are in this knapsack.
+         * Total duration of all {@link TestEntity}es that are in this knapsack.
          */
         long total;
 
-        void add(TestClass tc) {
+        void add(TestEntity tc) {
             assert tc.knapsack == null;
             tc.knapsack = this;
             total += tc.duration;
@@ -136,8 +167,8 @@ public class ParallelTestExecutor extends Builder {
         }
         FilePath dir = workspace.child("test-splits");
         dir.deleteRecursive();
-        List<InclusionExclusionPattern> splits = findTestSplits(parallelism, build, listener, includesPatternFile != null,
-                null, build.getWorkspace(), estimateTestsFromFiles);
+        List<InclusionExclusionPattern> splits = findTestSplits(parallelism, testMode, build, listener, includesPatternFile != null,
+                null, build.getWorkspace());
         for (int i = 0; i < splits.size(); i++) {
             InclusionExclusionPattern pattern = splits.get(i);
             try (OutputStream os = dir.child("split." + i + "." + (pattern.isIncludes() ? "include" : "exclude") + ".txt").write();
@@ -158,42 +189,12 @@ public class ParallelTestExecutor extends Builder {
         return true;
     }
 
-    private static final Pattern TEST = Pattern.compile(".+/src/test/java/(.+)[.]java");
-    public static Map<String, TestClass>  findTestResultsInDirectory(Run<?,?> build, TaskListener listener, @CheckForNull FilePath workspace){
-        if(workspace==null){
-            return Collections.emptyMap();
-        }
-        Map<String, TestClass> data = new TreeMap<>();
-        final List<String> testFilesExpression = new ArrayList<>();
-        testFilesExpression.add("**/src/test/java/**/Test*.java");
-        testFilesExpression.add("**/src/test/java/**/*Test.java");
-        testFilesExpression.add("**/src/test/java/**/*Tests.java");
-        testFilesExpression.add("**/src/test/java/**/*TestCase.java");
-        FilePath[] tests;
-        try {
-            tests = workspace.list(StringUtils.join(testFilesExpression, ","));
-        } catch (Throwable throwable) {
-            Functions.printStackTrace(throwable, listener.getLogger());
-            return data;
-        }
-        for (FilePath test : tests) {
-            String testPath = test.getRemote().replace('\\', '/');
-            Matcher m = TEST.matcher(testPath);
-            if (!m.matches()) {
-             throw new IllegalStateException(testPath + " didn't match expected format");
-            }
-            String relativePath = m.group(1); // e.g. pkg/subpkg/SomeTest
-            data.put(relativePath, new TestClass(relativePath));
-        }
-        return data;
-
-    }
-
-    static List<InclusionExclusionPattern> findTestSplits(Parallelism parallelism, Run<?,?> build, TaskListener listener,
+    static List<InclusionExclusionPattern> findTestSplits(Parallelism parallelism, @CheckForNull TestMode testMode, Run<?,?> build, TaskListener listener,
                                                           boolean generateInclusions,
-                                                          @CheckForNull final String stageName, @CheckForNull FilePath workspace, boolean estimateTestsFromFiles) {
+                                                          @CheckForNull final String stageName, @CheckForNull FilePath workspace) throws InterruptedException {
+        testMode = testMode == null ? TestMode.getDefault() : testMode;
         TestResult tr = findPreviousTestResult(build, listener);
-        Map<String/*fully qualified class name*/, TestClass> data = new TreeMap<>();
+        Map<String/*fully qualified class name*/, TestEntity> data = new TreeMap<>();
         if (tr != null) {
             Run<?,?> prevRun = tr.getRun();
             if (prevRun instanceof FlowExecutionOwner.Executable && stageName != null) {
@@ -206,16 +207,13 @@ public class ParallelTestExecutor extends Builder {
                         if (stageId != null) {
                             tr = ((hudson.tasks.junit.TestResult) tr).getResultForPipelineBlock(stageId.getId());
                         }
-
                     }
                 }
             }
-            collect(tr, data);
+            collect(tr, data, testMode);
         } else {
-            if(estimateTestsFromFiles) {
-                listener.getLogger().println("No record available, try to find test classes");
-                data = findTestResultsInDirectory(build, listener, workspace);
-            }
+            listener.getLogger().println("No record available, try to find test classes");
+            data = testMode.estimate(workspace, listener);
             if(data.isEmpty()) {
                 listener.getLogger().println("No test classes was found, so executing everything in one place");
                 return Collections.singletonList(new InclusionExclusionPattern(Collections.<String>emptyList(), false));
@@ -223,7 +221,7 @@ public class ParallelTestExecutor extends Builder {
         }
 
             // sort in the descending order of the duration
-            List<TestClass> sorted = new ArrayList<>(data.values());
+            List<TestEntity> sorted = new ArrayList<>(data.values());
             Collections.sort(sorted);
 
             // degree of the parallelism. we need minimum 1
@@ -239,9 +237,9 @@ public class ParallelTestExecutor extends Builder {
                 and the result should be of roughly equal size
              */
             PriorityQueue<Knapsack> q = new PriorityQueue<>(knapsacks);
-            for (TestClass d : sorted) {
+            for (var testEntity : sorted) {
                 Knapsack k = q.poll();
-                k.add(d);
+                k.add(testEntity);
                 q.add(k);
             }
 
@@ -258,21 +256,17 @@ public class ParallelTestExecutor extends Builder {
             }
             variance /= n;
             long stddev = (long) Math.sqrt(variance);
-            listener.getLogger().printf("%d test classes (%dms) divided into %d sets. Min=%dms, Average=%dms, Max=%dms, stddev=%dms%n",
-                    data.size(), total, n, min, average, max, stddev);
+            listener.getLogger().printf("%d test %s (%dms) divided into %d sets. Min=%dms, Average=%dms, Max=%dms, stddev=%dms%n",
+                    data.size(), testMode.getWord(), total, n, min, average, max, stddev);
 
             List<InclusionExclusionPattern> r = new ArrayList<>();
             for (int i = 0; i < n; i++) {
                 Knapsack k = knapsacks.get(i);
                 boolean shouldIncludeElements = generateInclusions && i != 0;
-                List<String> elements = new ArrayList<>();
+                List<String> elements = sorted.stream().filter(testEntity -> shouldIncludeElements == (testEntity.knapsack == k))
+                        .flatMap(testEntity -> testEntity.getElements().stream())
+                        .collect(Collectors.toList());
                 r.add(new InclusionExclusionPattern(elements, shouldIncludeElements));
-                for (TestClass d : sorted) {
-                    if (shouldIncludeElements == (d.knapsack == k)) {
-                        elements.add(d.getSourceFileName(".java"));
-                        elements.add(d.getSourceFileName(".class"));
-                    }
-                }
             }
             return r;
     }
@@ -329,19 +323,22 @@ public class ParallelTestExecutor extends Builder {
     }
 
     /**
-     * Recursive visits the structure inside {@link hudson.tasks.test.TestResult}.
+     * Visits the structure inside {@link hudson.tasks.test.TestResult}.
      */
-    static private void collect(TestResult r, Map<String, TestClass> data) {
-        if (r instanceof ClassResult) {
-            ClassResult cr = (ClassResult) r;
-            TestClass dp = new TestClass(cr);
-            data.put(dp.className, dp);
-            return; // no need to go deeper
-        }
-        if (r instanceof TabulatedResult) {
-            TabulatedResult tr = (TabulatedResult) r;
-            for (TestResult child : tr.getChildren()) {
-                collect(child, data);
+    private static void collect(TestResult r, Map<String, TestEntity> data, TestMode testMode) {
+        var queue = new ArrayDeque<TestResult>();
+        queue.push(r);
+        while (!queue.isEmpty()) {
+            var current = queue.pop();
+            if (current instanceof ClassResult) {
+                var classResult = (ClassResult) current;
+                LOGGER.log(Level.FINE, () -> "Retrieving test entities from " + classResult.getFullName());
+                data.putAll(testMode.getTestEntitiesMap(classResult));
+            } else if (current instanceof TabulatedResult) {
+                LOGGER.log(Level.FINE, () -> "Considering children of " + current.getFullName());
+                queue.addAll(((TabulatedResult) current).getChildren());
+            } else {
+                LOGGER.log(Level.FINE, () -> "Ignoring " + current.getFullName());
             }
         }
     }

@@ -1,14 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
-    <f:entry field="parallelism">
-        <f:dropdownDescriptorSelector field="parallelism" title="Degree of parallelism"/>
-    </f:entry>
+    <f:dropdownDescriptorSelector field="parallelism" title="Degree of parallelism"/>
+    <f:dropdownDescriptorSelector field="testMode" title="Test mode"/>
     <f:entry field="generateInclusions">
         <f:checkbox title="Generate inclusion patterns"/>
-    </f:entry>
-    <f:entry field="estimateTestsFromFiles">
-        <f:checkbox title="Estimate tests from file sources"/>
     </f:entry>
     <f:entry field="stage" title="stage">
         <f:textbox/>

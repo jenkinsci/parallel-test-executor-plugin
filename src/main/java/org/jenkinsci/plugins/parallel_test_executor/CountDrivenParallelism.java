@@ -19,7 +19,7 @@ public class CountDrivenParallelism extends Parallelism {
     }
 
     @Override
-    public int calculate(List<TestClass> tests) {
+    public int calculate(List<TestEntity> tests) {
         // Don't split into 5 buckets if we only have 2 tests etc
         return tests == null ?
                size :
