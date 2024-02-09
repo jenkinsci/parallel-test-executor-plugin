@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<?jelly escape-by-default='true'?>
-<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
-  <f:description>
-    Each exclusion/inclusion generates one line consisting of the test case name only. <br/>
-    This is useful where a tool produces JUnit result XML containing unique test case names without any class prefix.
-  </f:description>
-</j:jelly>
