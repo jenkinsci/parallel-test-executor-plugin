@@ -30,7 +30,7 @@ public class JavaTestCaseName extends JavaClassName {
         @Override
         @NonNull
         public String getDisplayName() {
-            return "By java test cases";
+            return "By Java test cases";
         }
     }
 }
