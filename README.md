@@ -71,4 +71,4 @@ The `demo` subdirectory in sources contains a demo of this plugin based on Docke
 ## Changelog
 
 See [GitHub releases](https://github.com/jenkinsci/parallel-test-executor-plugin/releases)
-or the [old changelog](old-changelog.md).
+or the [old changelog](https://github.com/jenkinsci/parallel-test-executor-plugin/blob/b2f8c46675f19ce0d5041966e611a0f6a5411b79/old-changelog.md).
