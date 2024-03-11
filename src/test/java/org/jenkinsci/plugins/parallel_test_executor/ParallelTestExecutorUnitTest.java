@@ -10,6 +10,8 @@ import hudson.tasks.test.AbstractTestResultAction;
 import java.io.IOException;
 import org.apache.tools.ant.DirectoryScanner;
 import org.hamcrest.Matchers;
+import org.jenkinsci.plugins.parallel_test_executor.testmode.JavaTestCaseName;
+import org.jenkinsci.plugins.parallel_test_executor.testmode.JavaClassName;
 import org.jenkinsci.plugins.parallel_test_executor.testmode.TestClassAndCaseName;
 import org.jenkinsci.plugins.parallel_test_executor.testmode.TestMode;
 import org.junit.Before;
@@ -86,8 +88,12 @@ public class ParallelTestExecutorUnitTest {
 
     @Test
     public void findTestSplits() throws Exception {
-        CountDrivenParallelism parallelism = new CountDrivenParallelism(5);
-        checkTestSplits(parallelism, 5, null);
+        checkTestSplits(new CountDrivenParallelism(5), 5, null);
+        checkTestSplits(new CountDrivenParallelism(5), 5, new JavaClassName());
+        // Only 5 classes
+        checkTestSplits(new CountDrivenParallelism(10), 5, new JavaClassName());
+        // Splitting by test cases we can parallelize more!
+        checkTestSplits(new CountDrivenParallelism(10), 10, new JavaTestCaseName());
     }
     
     @Test
