@@ -1,10 +1,13 @@
 package org.jenkinsci.plugins.parallel_test_executor.testmode;
 
+import static java.util.function.Function.identity;
+
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.model.Descriptor;
 import hudson.model.TaskListener;
+import hudson.tasks.junit.CaseResult;
 import hudson.tasks.junit.ClassResult;
 import java.io.IOException;
 import java.util.List;
@@ -12,6 +15,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.parallel_test_executor.TestClass;
 import org.jenkinsci.plugins.parallel_test_executor.TestEntity;
@@ -39,15 +43,24 @@ public class JavaClassName extends TestMode {
     @DataBoundConstructor
     public JavaClassName() {}
 
+    public boolean isSplitByCase() {
+        return false;
+    }
+
     @Override
     @NonNull
     public Map<String, TestEntity> getTestEntitiesMap(@NonNull ClassResult classResult) {
-        TestClass testClass = new TestClass(classResult);
-        return Map.of(testClass.getKey(), testClass);
+        if (isSplitByCase()) {
+            return classResult.getChildren().stream().map(JavaTestCase::new).collect(Collectors.toMap(JavaTestCase::getKey, identity()));
+        } else {
+            TestClass testClass = new TestClass(classResult);
+            return Map.of(testClass.getKey(), testClass);
+        }
     }
 
     @Override
     public Map<String, TestEntity> estimate(FilePath workspace, @NonNull TaskListener listener) throws InterruptedException {
+        // TODO estimate test cases
         if (workspace == null) {
             return Map.of();
         }
@@ -71,7 +84,30 @@ public class JavaClassName extends TestMode {
     @Override
     @NonNull
     public String getWord() {
-        return "classes";
+        return isSplitByCase() ? "cases" : "classes";
+    }
+
+    private static class JavaTestCase extends TestEntity {
+        private final String output;
+        JavaTestCase(CaseResult cr) {
+            this.output = cr.getClassName() + "#" + cr.getName();
+            this.duration = (long)(cr.getDuration()*1000);  // milliseconds is a good enough precision for us
+        }
+
+        @Override
+        public String getKey() {
+            return output;
+        }
+
+        @Override
+        public List<String> getElements() {
+            return List.of(output);
+        }
+
+        @Override
+        public String toString() {
+            return output;
+        }
     }
 
     @Extension

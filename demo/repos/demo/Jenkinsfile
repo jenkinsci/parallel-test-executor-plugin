@@ -20,7 +20,7 @@ stage('Sources') {
 }
 
 stage('Testing Hello') {
-  testInParallel(count(Integer.parseInt(params.SPLIT)), null, 'inclusions.txt', 'exclusions.txt', 'Testing Hello', {
+  testInParallel(count(Integer.parseInt(params.SPLIT)), javaTestCase(), 'inclusions.txt', 'exclusions.txt', 'Testing Hello', {
     unstash 'hello'
   }, {
     configFileProvider([configFile(fileId: 'jenkins-mirror', variable: 'SETTINGS')]) {
@@ -33,7 +33,7 @@ stage('Testing Hello') {
 }
 
 stage('Testing Goodbye') {
-  testInParallel(count(Integer.parseInt(params.SPLIT)), null, 'inclusions.txt', 'exclusions.txt', 'Testing Goodbye', {
+  testInParallel(count(Integer.parseInt(params.SPLIT)), javaTestCase(), 'inclusions.txt', 'exclusions.txt', 'Testing Goodbye', {
     unstash 'goodbye'
   }, {
     configFileProvider([configFile(fileId: 'jenkins-mirror', variable: 'SETTINGS')]) {

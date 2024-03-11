@@ -189,10 +189,10 @@ public class ParallelTestExecutor extends Builder {
         return true;
     }
 
-    static List<InclusionExclusionPattern> findTestSplits(Parallelism parallelism, @CheckForNull TestMode testMode, Run<?,?> build, TaskListener listener,
+    static List<InclusionExclusionPattern> findTestSplits(Parallelism parallelism, @CheckForNull TestMode inputTestMode, Run<?,?> build, TaskListener listener,
                                                           boolean generateInclusions,
                                                           @CheckForNull final String stageName, @CheckForNull FilePath workspace) throws InterruptedException {
-        testMode = testMode == null ? TestMode.getDefault() : testMode;
+        TestMode testMode = inputTestMode == null ? TestMode.getDefault() : inputTestMode;
         TestResult tr = findPreviousTestResult(build, listener);
         Map<String/*fully qualified class name*/, TestEntity> data = new TreeMap<>();
         if (tr != null) {
