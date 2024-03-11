@@ -45,6 +45,6 @@ public abstract class TestMode extends AbstractDescribableImpl<TestMode> impleme
     }
 
     public static TestMode fixDefault(TestMode testMode) {
-        return testMode instanceof JavaClassName ? null : testMode;
+        return JavaClassName.class.equals(testMode.getClass()) ? null : testMode;
     }
 }
