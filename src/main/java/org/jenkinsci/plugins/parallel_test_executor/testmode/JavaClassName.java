@@ -12,6 +12,7 @@ import hudson.tasks.junit.ClassResult;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -51,7 +52,7 @@ public class JavaClassName extends TestMode {
     @NonNull
     public Map<String, TestEntity> getTestEntitiesMap(@NonNull ClassResult classResult) {
         if (isSplitByCase()) {
-            return classResult.getChildren().stream().map(JavaTestCase::new).collect(Collectors.toMap(JavaTestCase::getKey, identity()));
+            return classResult.getChildren().stream().map(JavaTestCase::new).distinct().collect(Collectors.toMap(JavaTestCase::getKey, identity()));
         } else {
             TestClass testClass = new TestClass(classResult);
             return Map.of(testClass.getKey(), testClass);
@@ -107,6 +108,19 @@ public class JavaClassName extends TestMode {
         @Override
         public String toString() {
             return output;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            JavaTestCase that = (JavaTestCase) o;
+            return Objects.equals(output, that.output);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(output);
         }
     }
 
