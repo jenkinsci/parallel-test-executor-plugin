@@ -95,6 +95,11 @@ public class ParallelTestExecutorUnitTest {
         // Splitting by test cases we can parallelize more!
         checkTestSplits(new CountDrivenParallelism(10), 10, new JavaTestCaseName());
     }
+
+    @Test
+    public void findTestDuplicates() throws Exception {
+        checkTestSplits(new CountDrivenParallelism(10), 10, new JavaTestCaseName());
+    }
     
     @Test
     public void findTestCaseTimeSplitsExclusion() throws Exception {
