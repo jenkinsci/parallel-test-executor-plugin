@@ -367,20 +367,24 @@ public class ParallelTestExecutor extends Builder {
         for (int i = 0; i < NUMBER_OF_BUILDS_TO_SEARCH; i++) {// limit the search to a small number to avoid loading too much
             if (b == null) break;
             if (RESULTS_OF_BUILDS_TO_CONSIDER.contains(b.getResult()) && !b.isBuilding()) {
-                AbstractTestResultAction tra = b.getAction(AbstractTestResultAction.class);
-                if (tra != null) {
-                    Object o = tra.getResult();
-                    if (o instanceof TestResult) {
-                        TestResult tr = (TestResult) o;
-                        String hyperlink = ModelHyperlinkNote.encodeTo('/' + b.getUrl(), originProject != b.getParent() ? b.getFullDisplayName() : b.getDisplayName());
-                        if (tr.getTotalCount() == 0) {
-                            listener.getLogger().printf("Build %s has no loadable test results (supposed count %d), skipping%n", hyperlink, tra.getTotalCount());
-                        } else {
-                            listener.getLogger().printf("Using build %s as reference%n", hyperlink);
-                            result = tr;
-                            break;
+                String hyperlink = ModelHyperlinkNote.encodeTo('/' + b.getUrl(), originProject != b.getParent() ? b.getFullDisplayName() : b.getDisplayName());
+                try {
+                    AbstractTestResultAction tra = b.getAction(AbstractTestResultAction.class);
+                    if (tra != null) {
+                        Object o = tra.getResult();
+                        if (o instanceof TestResult) {
+                            TestResult tr = (TestResult) o;
+                            if (tr.getTotalCount() == 0) {
+                                listener.getLogger().printf("Build %s has no loadable test results (supposed count %d), skipping%n", hyperlink, tra.getTotalCount());
+                            } else {
+                                listener.getLogger().printf("Using build %s as reference%n", hyperlink);
+                                result = tr;
+                                break;
+                            }
                         }
                     }
+                } catch (RuntimeException e) {
+                    e.printStackTrace(listener.error("Failed to load (corrupt?) build %s, skipping%n", hyperlink));
                 }
             }
             b = b.getPreviousBuild();
