@@ -205,7 +205,10 @@ public class ParallelTestExecutor extends Builder {
                         DepthFirstScanner scanner = new DepthFirstScanner();
                         FlowNode stageId = scanner.findFirstMatch(execution, new StageNamePredicate(stageName));
                         if (stageId != null) {
+                            listener.getLogger().println("Found stage \"" + stageName + "\" in " + prevRun.getFullDisplayName());
                             tr = ((hudson.tasks.junit.TestResult) tr).getResultForPipelineBlock(stageId.getId());
+                        } else {
+                            listener.getLogger().println("No stage \"" + stageName + "\" found in " + prevRun.getFullDisplayName());
                         }
                     }
                 }
