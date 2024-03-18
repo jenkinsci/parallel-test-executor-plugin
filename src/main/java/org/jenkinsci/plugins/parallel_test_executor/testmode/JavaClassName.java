@@ -52,7 +52,7 @@ public class JavaClassName extends TestMode {
     @NonNull
     public Map<String, TestEntity> getTestEntitiesMap(@NonNull ClassResult classResult) {
         if (isSplitByCase()) {
-            return classResult.getChildren().stream().map(JavaTestCase::new).distinct().collect(Collectors.toMap(JavaTestCase::getKey, identity()));
+            return classResult.getChildren().stream().map(JavaTestCase::new).collect(Collectors.toMap(JavaTestCase::getKey, identity(), JavaTestCase::new));
         } else {
             TestClass testClass = new TestClass(classResult);
             return Map.of(testClass.getKey(), testClass);
@@ -90,9 +90,22 @@ public class JavaClassName extends TestMode {
 
     private static class JavaTestCase extends TestEntity {
         private final String output;
-        JavaTestCase(CaseResult cr) {
-            this.output = cr.getClassName() + "#" + cr.getName();
+        private JavaTestCase(CaseResult cr) {
+            // Parameterized tests use ${fqdnClassName}#${methodName}[{parametersDescription}] format
+            // passing parameters to surefire is not supported, so just drop them and will sum durations
+            this.output = cr.getClassName() + "#" + cr.getName().split("\\[")[0];
             this.duration = (long)(cr.getDuration()*1000);  // milliseconds is a good enough precision for us
+        }
+
+        /**
+         * Merge two java test cases with the same name, summing their durations.
+         */
+        private JavaTestCase(TestEntity te1, TestEntity te2) {
+            if (!te1.getKey().equals(te2.getKey())) {
+                throw new IllegalArgumentException("Test cases must have the same key");
+            }
+            this.output = te1.getKey();
+            this.duration = te1.getDuration() + te2.getDuration();
         }
 
         @Override

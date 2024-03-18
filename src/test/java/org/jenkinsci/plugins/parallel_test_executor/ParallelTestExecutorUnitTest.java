@@ -8,6 +8,7 @@ import hudson.model.TaskListener;
 import hudson.tasks.junit.TestResult;
 import hudson.tasks.test.AbstractTestResultAction;
 import java.io.IOException;
+import java.util.stream.Collectors;
 import org.apache.tools.ant.DirectoryScanner;
 import org.hamcrest.Matchers;
 import org.jenkinsci.plugins.parallel_test_executor.testmode.JavaTestCaseName;
@@ -31,11 +32,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assume.assumeThat;
 import org.jvnet.hudson.test.Issue;
+
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -132,6 +137,19 @@ public class ParallelTestExecutorUnitTest {
         for (InclusionExclusionPattern split : splits) {
             assertFalse(split.isIncludes());
         }
+    }
+
+    @Test
+    public void findTestCasesWithParameters() throws Exception {
+        TestResult testResult = new TestResult(0L, scanner, false);
+        testResult.tally();
+        when(action.getResult()).thenReturn(testResult);
+        CountDrivenParallelism parallelism = new CountDrivenParallelism(3);
+        List<InclusionExclusionPattern> splits = ParallelTestExecutor.findTestSplits(parallelism, new JavaTestCaseName(), build, listener, false, null, null);
+        assertEquals(3, splits.size());
+        var allSplits = splits.stream().flatMap(s -> s.getList().stream()).collect(Collectors.toSet());
+        assertThat(allSplits, hasSize(20));
+        assertThat(allSplits, hasItem("org.jenkinsci.plugins.parallel_test_executor.Test1#testCase"));
     }
 
     @Test
