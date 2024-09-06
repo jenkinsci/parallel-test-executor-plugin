@@ -2,7 +2,6 @@ package org.jenkinsci.plugins.parallel_test_executor;
 
 import com.google.common.collect.Lists;
 import hudson.AbortException;
-import hudson.Extension;
 import hudson.FilePath;
 import hudson.model.AbstractBuild;
 import hudson.model.Action;
@@ -19,6 +18,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.logging.Logger;
+import org.jenkinsci.plugins.variant.OptionalExtension;
 
 /**
  * Essentially a copy-paste of {@link hudson.plugins.parameterizedtrigger.BinaryFileParameterFactory} that takes a
@@ -87,7 +87,7 @@ public class MultipleBinaryFileParameterFactory extends AbstractBuildParameterFa
     }
 
 
-    @Extension
+    @OptionalExtension(requirePlugins = "parameterized-trigger")
     public static class DescriptorImpl extends AbstractBuildParameterFactoryDescriptor {
         @Override
         public String getDisplayName() {
