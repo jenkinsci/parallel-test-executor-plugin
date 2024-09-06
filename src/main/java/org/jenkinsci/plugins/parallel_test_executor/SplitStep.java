@@ -132,11 +132,11 @@ public final class SplitStep extends Step {
             FilePath path = context.get(FilePath.class);
 
             if (step.generateInclusions) {
-                return ParallelTestExecutor.findTestSplits(step.parallelism, step.testMode, build, listener, step.generateInclusions,
+                return Splitter.findTestSplits(step.parallelism, step.testMode, build, listener, step.generateInclusions,
                         step.stage, path);
             } else {
                 List<List<String>> result = new ArrayList<>();
-                for (InclusionExclusionPattern pattern : ParallelTestExecutor.findTestSplits(step.parallelism, step.testMode, build, listener,
+                for (InclusionExclusionPattern pattern : Splitter.findTestSplits(step.parallelism, step.testMode, build, listener,
                         step.generateInclusions, step.stage, path)) {
                     result.add(pattern.getList());
                 }
