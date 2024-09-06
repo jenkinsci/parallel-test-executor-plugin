@@ -6,6 +6,7 @@ import hudson.model.ParametersAction;
 import hudson.model.ParametersDefinitionProperty;
 import hudson.model.StringParameterDefinition;
 import hudson.model.StringParameterValue;
+import hudson.tasks.junit.TestResultAction;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import org.apache.commons.io.FileUtils;
@@ -101,6 +102,11 @@ public class ParallelTestExecutorTest {
         jenkinsRule.assertLogContains("splits.size=1", b2);
         b1.getExecutor().interrupt();
         jenkinsRule.waitForCompletion(b1);
+    }
+
+    static {
+        // https://github.com/jenkinsci/junit-plugin/pull/625#discussion_r1747346165
+        System.setProperty(TestResultAction.class.getName() + ".RESULT_CACHE_ENABLED", "false");
     }
 
     @Issue("JENKINS-71139")
