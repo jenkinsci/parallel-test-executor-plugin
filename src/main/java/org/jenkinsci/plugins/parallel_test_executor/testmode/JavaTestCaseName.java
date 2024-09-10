@@ -9,7 +9,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 /**
  * This mode works best with java projects.
  * <p>
- * Parallelize per java test case.
+ * Parallelize per java test case ingoring parameters if present.
  * </p>
  * <p>
  * It is also able to estimate tests to run from the workspace content if no historical context could be found.
@@ -24,13 +24,17 @@ public class JavaTestCaseName extends JavaClassName {
         return true;
     }
 
+    @Override public boolean useParameters() {
+        return false;
+    }
+
     @Extension
     @Symbol("javaTestCase")
     public static class DescriptorImpl extends Descriptor<TestMode> {
         @Override
         @NonNull
         public String getDisplayName() {
-            return "By Java test cases";
+            return "By Java test cases without parameters";
         }
     }
 }
