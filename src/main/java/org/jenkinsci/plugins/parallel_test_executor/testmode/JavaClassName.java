@@ -48,11 +48,15 @@ public class JavaClassName extends TestMode {
         return false;
     }
 
+    public boolean useParameters() {
+        return false;
+    }
+
     @Override
     @NonNull
     public Map<String, TestEntity> getTestEntitiesMap(@NonNull ClassResult classResult) {
         if (isSplitByCase()) {
-            return classResult.getChildren().stream().map(JavaTestCase::new).collect(Collectors.toMap(JavaTestCase::getKey, identity(), JavaTestCase::new));
+            return classResult.getChildren().stream().map(cr -> new JavaTestCase(cr, useParameters())).collect(Collectors.toMap(JavaTestCase::getKey, identity(), JavaTestCase::new));
         } else {
             TestClass testClass = new TestClass(classResult);
             return Map.of(testClass.getKey(), testClass);
@@ -90,10 +94,14 @@ public class JavaClassName extends TestMode {
 
     private static class JavaTestCase extends TestEntity {
         private final String output;
-        private JavaTestCase(CaseResult cr) {
+        private JavaTestCase(CaseResult cr, boolean useParams) {
             // Parameterized tests use ${fqdnClassName}#${methodName}[{parametersDescription}] format
-            // passing parameters to surefire is not supported, so just drop them and will sum durations
-            this.output = cr.getClassName() + "#" + cr.getName().split("\\[")[0];
+            if (useParams) {
+                this.output = cr.getClassName() + "#" + cr.getName();
+            } else {
+                // Some surefire versions don't support parameters, so just drop them and will sum durations
+                this.output = cr.getClassName() + "#" + cr.getName().split("\\[")[0];
+            }
             this.duration = (long)(cr.getDuration()*1000);  // milliseconds is a good enough precision for us
         }
 

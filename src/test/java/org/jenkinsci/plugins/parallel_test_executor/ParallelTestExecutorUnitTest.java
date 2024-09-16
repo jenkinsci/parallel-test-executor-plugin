@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.util.stream.Collectors;
 import org.apache.tools.ant.DirectoryScanner;
 import org.hamcrest.Matchers;
+import org.jenkinsci.plugins.parallel_test_executor.testmode.JavaParameterizedTestCaseName;
 import org.jenkinsci.plugins.parallel_test_executor.testmode.JavaTestCaseName;
 import org.jenkinsci.plugins.parallel_test_executor.testmode.JavaClassName;
 import org.jenkinsci.plugins.parallel_test_executor.testmode.TestClassAndCaseName;
@@ -150,6 +151,19 @@ public class ParallelTestExecutorUnitTest {
         var allSplits = splits.stream().flatMap(s -> s.getList().stream()).collect(Collectors.toSet());
         assertThat(allSplits, hasSize(20));
         assertThat(allSplits, hasItem("org.jenkinsci.plugins.parallel_test_executor.Test1#testCase"));
+    }
+
+    @Test
+    public void findTestCasesWithParametersIncluded() throws Exception {
+        TestResult testResult = new TestResult(0L, scanner, false);
+        testResult.tally();
+        when(action.getResult()).thenReturn(testResult);
+        CountDrivenParallelism parallelism = new CountDrivenParallelism(3);
+        List<InclusionExclusionPattern> splits = Splitter.findTestSplits(parallelism, new JavaParameterizedTestCaseName(), build, listener, false, null, null);
+        assertEquals(3, splits.size());
+        var allSplits = splits.stream().flatMap(s -> s.getList().stream()).collect(Collectors.toSet());
+        assertThat(allSplits, hasSize(22));
+        assertThat(allSplits, hasItem("org.jenkinsci.plugins.parallel_test_executor.Test1#testCase[param1]"));
     }
 
     @Test
