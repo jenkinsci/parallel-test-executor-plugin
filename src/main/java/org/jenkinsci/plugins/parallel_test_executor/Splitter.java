@@ -70,30 +70,14 @@ class Splitter {
         TestResult tr = findPreviousTestResult(build, listener);
         Map<String/*fully qualified class name*/, TestEntity> data = new TreeMap<>();
         if (tr != null) {
-            Run<?,?> prevRun = tr.getRun();
-            if (prevRun instanceof FlowExecutionOwner.Executable && stageName != null) {
-                FlowExecutionOwner owner = ((FlowExecutionOwner.Executable)prevRun).asFlowExecutionOwner();
-                if (owner != null) {
-                    FlowExecution execution = owner.getOrNull();
-                    if (execution != null) {
-                        DepthFirstScanner scanner = new DepthFirstScanner();
-                        FlowNode stageId = scanner.findFirstMatch(execution, new StageNamePredicate(stageName));
-                        if (stageId != null) {
-                            listener.getLogger().println("Found stage \"" + stageName + "\" in " + prevRun.getFullDisplayName());
-                            tr = ((hudson.tasks.junit.TestResult) tr).getResultForPipelineBlock(stageId.getId());
-                        } else {
-                            listener.getLogger().println("No stage \"" + stageName + "\" found in " + prevRun.getFullDisplayName());
-                        }
-                    }
-                }
-            }
+            tr = mayFilterByStageName(tr, stageName, listener);
             collect(tr, data, testMode);
         } else {
             listener.getLogger().println("No record available, try to find test classes");
             data = testMode.estimate(workspace, listener);
             if(data.isEmpty()) {
                 listener.getLogger().println("No test classes was found, so executing everything in one place");
-                return Collections.singletonList(new InclusionExclusionPattern(Collections.<String>emptyList(), false));
+                return List.of(new InclusionExclusionPattern(List.of(), false));
             }
         }
 
@@ -148,6 +132,42 @@ class Splitter {
         return r;
     }
 
+    @NonNull
+    private static TestResult mayFilterByStageName(@NonNull TestResult tr, @CheckForNull String stageName, @NonNull TaskListener listener) {
+        Run<?,?> run = tr.getRun();
+        if (stageName != null) {
+            listener.getLogger().println("Looking for stage \"" + stageName + "\" in " + run.getFullDisplayName());
+            FlowExecution execution = resolveFlowExecution(run, listener);
+            if (execution != null) {
+                FlowNode stageId = new DepthFirstScanner().findFirstMatch(execution, new StageNamePredicate(stageName));
+                if (stageId != null) {
+                    listener.getLogger().println("Found stage \"" + stageName + "\" in " + run.getFullDisplayName());
+                    tr = ((hudson.tasks.junit.TestResult) tr).getResultForPipelineBlock(stageId.getId());
+                } else {
+                    listener.getLogger().println("No stage \"" + stageName + "\" found in " + run.getFullDisplayName());
+                }
+            } else {
+                listener.getLogger().println("No flow execution found in " + run.getFullDisplayName());
+            }
+        }
+        return tr;
+    }
+
+    @CheckForNull
+    private static FlowExecution resolveFlowExecution(Run<?, ?> prevRun, TaskListener listener) {
+        if (prevRun instanceof FlowExecutionOwner.Executable) {
+            FlowExecutionOwner owner = ((FlowExecutionOwner.Executable) prevRun).asFlowExecutionOwner();
+            if (owner != null) {
+                return owner.getOrNull();
+            } else {
+                listener.getLogger().println("No flow execution owner found in " + prevRun.getFullDisplayName());
+            }
+        } else {
+            listener.getLogger().println("Previous run doesn't have the expected type: " + prevRun);
+        }
+        return null;
+    }
+
     private static long pow(long l) {
         return l * l;
     }
@@ -183,7 +203,7 @@ class Splitter {
             if (head instanceof ChangeRequestSCMHead) {
                 SCMHead target = ((ChangeRequestSCMHead) head).getTarget();
                 Item targetBranch = project.getParent().getItem(target.getName());
-                if (targetBranch != null && targetBranch instanceof Job) {
+                if (targetBranch instanceof Job) {
                     result = getTestResult(project, ((Job<?, ?>) targetBranch).getLastBuild(), listener);
                 }
             }
