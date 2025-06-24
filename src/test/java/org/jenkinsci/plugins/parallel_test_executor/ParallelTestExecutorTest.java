@@ -7,34 +7,28 @@ import hudson.model.ParametersDefinitionProperty;
 import hudson.model.StringParameterDefinition;
 import hudson.model.StringParameterValue;
 import hudson.tasks.junit.TestResultAction;
-import java.io.File;
-import java.nio.charset.StandardCharsets;
 import org.apache.commons.io.FileUtils;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.cps.SnippetizerTester;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.jvnet.hudson.test.BuildWatcher;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 import org.jvnet.hudson.test.recipes.LocalData;
 
-import static org.junit.Assert.assertTrue;
+import java.io.File;
+import java.nio.charset.StandardCharsets;
 
-public class ParallelTestExecutorTest {
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-    @ClassRule
-    public static BuildWatcher buildWatcher = new BuildWatcher();
-
-    @Rule
-    public JenkinsRule jenkinsRule = new JenkinsRule();
+@WithJenkins
+class ParallelTestExecutorTest {
 
     @Test
     @LocalData
-    public void xmlWithNoAddJUnitPublisherIsLoadedCorrectly() throws Exception {
+    void xmlWithNoAddJUnitPublisherIsLoadedCorrectly(JenkinsRule jenkinsRule) {
         FreeStyleProject p = (FreeStyleProject) jenkinsRule.jenkins.getItem("old");
         ParallelTestExecutor trigger = (ParallelTestExecutor) p.getBuilders().get(0);
 
@@ -42,7 +36,7 @@ public class ParallelTestExecutorTest {
     }
 
     @Test
-    public void workflowGenerateInclusions() throws Exception {
+    void workflowGenerateInclusions(JenkinsRule jenkinsRule) throws Exception {
         new SnippetizerTester(jenkinsRule).assertRoundTrip(new SplitStep(new CountDrivenParallelism(5)), "splitTests count(5)");
         SplitStep step = new SplitStep(new TimeDrivenParallelism(3));
         step.setGenerateInclusions(true);
@@ -69,7 +63,7 @@ public class ParallelTestExecutorTest {
 
     @Test
     @Issue("JENKINS-53172")
-    public void workflowDoesNotGenerateInclusionsFromRunningBuild() throws Exception {
+    void workflowDoesNotGenerateInclusionsFromRunningBuild(JenkinsRule jenkinsRule) throws Exception {
         WorkflowJob p = jenkinsRule.jenkins.createProject(WorkflowJob.class, "p");
         ParameterDefinition sleepDef = new StringParameterDefinition("SLEEP", "100", "");
         ParametersDefinitionProperty sleepParamsDef = new ParametersDefinitionProperty(sleepDef);
@@ -111,7 +105,7 @@ public class ParallelTestExecutorTest {
 
     @Issue("JENKINS-71139")
     @Test
-    public void unloadableTestResult() throws Exception {
+    void unloadableTestResult(JenkinsRule jenkinsRule) throws Exception {
         {
             WorkflowJob p = jenkinsRule.jenkins.createProject(WorkflowJob.class, "p");
             p.setDefinition(new CpsFlowDefinition(
@@ -134,7 +128,7 @@ public class ParallelTestExecutorTest {
 
     @Issue("JENKINS-27395")
     @Test
-    public void splitTestsWithinStage() throws Exception {
+    void splitTestsWithinStage(JenkinsRule jenkinsRule) throws Exception {
         WorkflowJob p = jenkinsRule.jenkins.createProject(WorkflowJob.class, "p");
         p.setDefinition(new CpsFlowDefinition(
                 "def splits = splitTests parallelism: count(2), generateInclusions: true, stage: 'first'\n" +
@@ -175,7 +169,7 @@ public class ParallelTestExecutorTest {
     }
 
     @Test
-    public void splitTestsWithinParallelStage() throws Exception {
+    void splitTestsWithinParallelStage(JenkinsRule jenkinsRule) throws Exception {
         WorkflowJob p = jenkinsRule.jenkins.createProject(WorkflowJob.class, "p");
         p.setDefinition(new CpsFlowDefinition(
                 "def splits = splitTests parallelism: count(2), generateInclusions: true, stage: 'Branch: first'\n" +
@@ -219,7 +213,8 @@ public class ParallelTestExecutorTest {
     }
 
     @Issue("JENKINS-47206")
-    @Test public void estimateTestsFromFiles() throws Exception {
+    @Test
+    void estimateTestsFromFiles(JenkinsRule jenkinsRule) throws Exception {
         jenkinsRule.createSlave("remote", null, null);
         WorkflowJob p = jenkinsRule.jenkins.createProject(WorkflowJob.class, "p");
         p.setDefinition(new CpsFlowDefinition("" +
@@ -230,5 +225,4 @@ public class ParallelTestExecutorTest {
             "}", true));
         jenkinsRule.assertLogContains("splits: [TopTest.class, TopTest.java, some/pkg/OtherTest.class, some/pkg/OtherTest.java]", jenkinsRule.buildAndAssertSuccess(p));
     }
-
 }
